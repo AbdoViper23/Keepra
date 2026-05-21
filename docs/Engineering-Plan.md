@@ -10,8 +10,8 @@
 
 | Phase | Owner | Days | Status | Commit |
 |---|---|---|---|---|
-| 0. Setup & CI | E4 | 1 | 🟨 Scaffold done; awaiting first PR | (pending user commit) |
-| 1. Move skeleton | E1 | 2 | ⬜ Not started | — |
+| 0. Setup & CI | E4 | 1 | ✅ Done — added `internal/` for private docs (gitignored); `.claude/` gitignored | — |
+| 1. Move skeleton | E1 | 2 | ✅ Done — dropped `errors.move` (inlined per module); `public fun` instead of `public entry` (Move 2024 lint) | — |
 | 2. Heartbeat | E1 | 1 | ⬜ Not started | — |
 | 3. Guardian | E1 | 2 | ⬜ Not started | — |
 | 4. Seal integration (CLI) | E2 | 3 | ⬜ Not started | — |
