@@ -1,0 +1,30 @@
+name: Move Tests
+
+on:
+  push:
+    paths: ["move/**"]
+  pull_request:
+    paths: ["move/**"]
+
+jobs:
+  move-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Sui CLI
+        run: |
+          SUI_URL=$(curl -fsSL https://api.github.com/repos/MystenLabs/sui/releases/latest \
+            | grep -oP '"browser_download_url":\s*"\K[^"]+' \
+            | grep 'ubuntu-x86_64.tgz$')
+          echo "Downloading Sui CLI from: $SUI_URL"
+          curl -fsSL "$SUI_URL" | sudo tar xz -C /usr/local/bin/ ./sui
+          sudo chmod +x /usr/local/bin/sui
+          sui --version
+
+      - name: Move build
+        run: cd move/keepra && sui move build
+
+      # Phase 1 onward: enable the test step once Move sources + tests exist.
+      # - name: Move test
+      #   run: cd move/keepra && sui move test

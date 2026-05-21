@@ -1,0 +1,10 @@
+/* Phase 0 placeholder — design system arrives via Claude Design. */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}

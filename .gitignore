@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+
+# Move build artifacts
+move/keepra/build/
+
+# Environment
+.env
+.env.local
+.env.production
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+
+# Sui CLI artifacts
+.sui/
+
+# Claude Code local settings, skills, plans — personal per-developer
+.claude/
+
+# Private/internal docs (competition, metrics — team-only)
+internal/
