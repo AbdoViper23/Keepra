@@ -1,5 +1,13 @@
 module keepra::heartbeat;
 
+use sui::clock::Clock;
+use keepra::events;
+
+// Error codes. Numbering matches the global registry in docs/Contracts.md §10.
+const ENotOwner: u64 = 1;
+const EVaultRevoked: u64 = 4;
+const EVaultTriggered: u64 = 5;
+
 public struct HeartbeatLog has key {
     id: UID,
     vault_id: ID,
@@ -49,4 +57,21 @@ public(package) fun share(log: HeartbeatLog) {
     transfer::share_object(log);
 }
 
-// Phase 2+ adds setters: heartbeat(), set_revoked(), set_triggered(), add_attestation(), set_dao_released().
+// ─── Setters (package-visible; mutated by vault::revoke_vault and future modules) ───
+
+public(package) fun set_revoked(log: &mut HeartbeatLog) {
+    log.revoked = true;
+}
+
+// ─── Entry: owner resets the inactivity timer ("I'm alive") ───
+
+public fun heartbeat(log: &mut HeartbeatLog, clock: &Clock, ctx: &TxContext) {
+    assert!(ctx.sender() == log.owner, ENotOwner);
+    assert!(!log.revoked, EVaultRevoked);
+    assert!(!log.triggered, EVaultTriggered);
+    let now_ms = clock.timestamp_ms();
+    log.last_heartbeat_ms = now_ms;
+    events::emit_heartbeat(log.vault_id, now_ms);
+}
+
+// Phase 3+ adds setters: set_triggered(), add_attestation(), set_dao_released().

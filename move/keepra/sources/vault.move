@@ -2,10 +2,12 @@ module keepra::vault;
 
 use std::string::String;
 use sui::clock::Clock;
-use keepra::heartbeat;
+use keepra::heartbeat::{Self, HeartbeatLog};
 use keepra::events;
 
 // Error codes. Numbering matches the global registry in docs/Contracts.md §10.
+const ENotOwner: u64 = 1;
+const EAlreadyRevoked: u64 = 6;
 const EInvalidQuorum: u64 = 7;
 const EQuorumExceedsSet: u64 = 8;
 const EInvalidInactivity: u64 = 9;
@@ -100,6 +102,15 @@ public fun create_and_seal(
 
     // Invariant I2: the Vault is frozen and never mutated after this line.
     transfer::public_freeze_object(vault);
+}
+
+// ─── Entry: owner permanently disables release (Invariant I4 — only edit operation) ───
+
+public fun revoke_vault(log: &mut HeartbeatLog, clock: &Clock, ctx: &TxContext) {
+    assert!(ctx.sender() == heartbeat::owner(log), ENotOwner);
+    assert!(!heartbeat::is_revoked(log), EAlreadyRevoked);
+    heartbeat::set_revoked(log);
+    events::emit_vault_revoked(heartbeat::vault_id(log), clock.timestamp_ms());
 }
 
 // ─── Read-only accessors ───
