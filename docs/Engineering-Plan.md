@@ -13,7 +13,7 @@
 | 0. Setup & CI | E4 | 1 | ✅ Done — added `internal/` for private docs (gitignored); `.claude/` gitignored | — |
 | 1. Move skeleton | E1 | 2 | ✅ Done — dropped `errors.move` (inlined per module); `public fun` instead of `public entry` (Move 2024 lint) | — |
 | 2. Heartbeat | E1 | 1 | ✅ Done — `revoke_vault` takes `&Clock` (spec called non-existent `current_time_ms` helper) | — |
-| 3. Guardian | E1 | 2 | ⬜ Not started | — |
+| 3. Guardian | E1 | 2 | ✅ Done — `mint_and_transfer` combines mint+transfer (spec's pattern fails to compile since GuardianCap lacks `store`) | — |
 | 4. Seal integration (CLI) | E2 | 3 | ⬜ Not started | — |
 | **5. Walrus integration (CUTOFF)** | E2 | 2 | ⬜ Not started | — |
 | 6. zkLogin + Enoki setup | E3 | 3 | ⬜ Not started | — |

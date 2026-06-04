@@ -63,6 +63,13 @@ public(package) fun set_revoked(log: &mut HeartbeatLog) {
     log.revoked = true;
 }
 
+// Idempotent: adds `who` only if not already present.
+public(package) fun add_attestation(log: &mut HeartbeatLog, who: address) {
+    if (!log.attestations.contains(&who)) {
+        log.attestations.push_back(who);
+    };
+}
+
 // ─── Entry: owner resets the inactivity timer ("I'm alive") ───
 
 public fun heartbeat(log: &mut HeartbeatLog, clock: &Clock, ctx: &TxContext) {

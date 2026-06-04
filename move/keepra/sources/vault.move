@@ -3,6 +3,7 @@ module keepra::vault;
 use std::string::String;
 use sui::clock::Clock;
 use keepra::heartbeat::{Self, HeartbeatLog};
+use keepra::guardian;
 use keepra::events;
 
 // Error codes. Numbering matches the global registry in docs/Contracts.md §10.
@@ -86,9 +87,14 @@ public fun create_and_seal(
         created_at_ms: now_ms,
     };
 
-    // Phase 3: mint a GuardianCap for each guardian in `guardian_set` here and
-    // transfer to the guardian's address. Skipped in Phase 1 — the guardian
-    // module doesn't exist yet.
+    // Mint a GuardianCap per guardian; each one is routed straight to the guardian's
+    // address (no intermediate holding). Bounded by guardian_set length (typically ≤ 10).
+    let mut i = 0;
+    let n = vault.guardian_set.length();
+    while (i < n) {
+        guardian::mint_and_transfer(vault_id, vault.guardian_set[i], ctx);
+        i = i + 1;
+    };
 
     events::emit_vault_created(
         vault_id,
