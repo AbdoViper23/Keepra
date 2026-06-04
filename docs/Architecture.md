@@ -1,6 +1,6 @@
 # Keepra — Architecture
 
-> **Audience**: engineers building Keepra. This is the canonical reference for *how the system fits together*. Implementation specifics for Move are in [Contracts.md](./Contracts.md), flows are in [Flows.md](./Flows.md), services in [Backend.md](./Backend.md), UI in [Frontend.md](./Frontend.md).
+> **Audience**: engineers building Keepra. This is the canonical reference for _how the system fits together_. Implementation specifics for Move are in [Contracts.md](./Contracts.md), flows are in [Flows.md](./Flows.md), services in [Backend.md](./Backend.md), UI in [Frontend.md](./Frontend.md).
 
 ---
 
@@ -55,29 +55,29 @@ Keepra the company **never appears in this diagram** as a trust party. Keepra op
 
 **What lives here**: the canonical state of every vault, the release policy, the capability objects that govern guardian/owner rights.
 
-| Responsibility | Why on-chain |
-|----------------|--------------|
-| `Vault` object (frozen) | Must be tamper-proof and globally readable by Seal key servers |
-| `HeartbeatLog` (mutable sidecar) | Owner heartbeat state must be visible to the policy evaluator |
-| `GuardianCap` (per-guardian capability) | Capability pattern enforces "only the right guardian can attest" |
-| `DaoLinkage` (per-vault DAO oracle binding) | The policy must be able to query the linked DAO's proposal state |
-| `seal_approve_release` (entry function) | The single source of truth for "can this vault open right now?" |
-| Events: `VaultSealed`, `Heartbeat`, `GuardianAttested`, `DaoTriggered`, `VaultRevoked` | Indexers and notifiers subscribe to these |
+| Responsibility                                                                         | Why on-chain                                                     |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `Vault` object (frozen)                                                                | Must be tamper-proof and globally readable by Seal key servers   |
+| `HeartbeatLog` (mutable sidecar)                                                       | Owner heartbeat state must be visible to the policy evaluator    |
+| `GuardianCap` (per-guardian capability)                                                | Capability pattern enforces "only the right guardian can attest" |
+| `DaoLinkage` (per-vault DAO oracle binding)                                            | The policy must be able to query the linked DAO's proposal state |
+| `seal_approve_release` (entry function)                                                | The single source of truth for "can this vault open right now?"  |
+| Events: `VaultSealed`, `Heartbeat`, `GuardianAttested`, `DaoTriggered`, `VaultRevoked` | Indexers and notifiers subscribe to these                        |
 
 ### 3.2 Off-chain (Keepra services)
 
-**What lives here**: anything that's *not* required for cryptographic correctness — UX, notifications, performance.
+**What lives here**: anything that's _not_ required for cryptographic correctness — UX, notifications, performance.
 
-| Responsibility | Why off-chain |
-|----------------|---------------|
-| Frontend SPA | Performance and UX |
-| Indexer (Postgres) | Fast queries; on-chain state is authoritative |
-| Notification daemon | Email/SMS for heartbeat reminders, claim alerts |
+| Responsibility                 | Why off-chain                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------ |
+| Frontend SPA                   | Performance and UX                                                                   |
+| Indexer (Postgres)             | Fast queries; on-chain state is authoritative                                        |
+| Notification daemon            | Email/SMS for heartbeat reminders, claim alerts                                      |
 | Walrus upload relay (optional) | Browser-friendly Walrus uploads (avoids client hitting ~2200 storage nodes directly) |
-| Oracle relayer | Reads DAO contract state, pushes proof to chain (when needed) |
-| Enoki sponsor service | Sponsors beneficiary gas for claim transactions |
+| Oracle relayer                 | Reads DAO contract state, pushes proof to chain (when needed)                        |
+| Enoki sponsor service          | Sponsors beneficiary gas for claim transactions                                      |
 
-**Critical principle**: if any off-chain service is compromised, the worst-case outcome is *denial of service* — never *unauthorized decryption*. The cryptographic decision (release the keys) is always made by Seal key servers running the Move policy.
+**Critical principle**: if any off-chain service is compromised, the worst-case outcome is _denial of service_ — never _unauthorized decryption_. The cryptographic decision (release the keys) is always made by Seal key servers running the Move policy.
 
 ---
 
@@ -125,7 +125,7 @@ ReclaimCap    ─── minted at seal time, transferred to beneficiary address
 
 Per Sui docs: an immutable object can be accessed by all network participants in parallel and passed as `&T` (immutable reference) to entry functions. This is exactly what we need — Seal key servers run `dry_run_transaction_block` calling `seal_approve_release(id, &vault, &log, &clock)` and they all read the same canonical state.
 
-The single caveat: Move package upgrades can change the policy *code*. Mitigation: after audit, publish the mainnet package with an immutable upgrade policy (irrevocable). See [Contracts.md § Upgrade Strategy](./Contracts.md#upgrade-strategy).
+The single caveat: Move package upgrades can change the policy _code_. Mitigation: after audit, publish the mainnet package with an immutable upgrade policy (irrevocable). See [Contracts.md § Upgrade Strategy](./Contracts.md#upgrade-strategy).
 
 ---
 
@@ -135,17 +135,17 @@ The single caveat: Move package upgrades can change the policy *code*. Mitigatio
 
 ### 5.1 What Seal gives us
 
-| Seal property | What we use it for |
-|---------------|---------------------|
+| Seal property                       | What we use it for                                                                                                          |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | **Identity-Based Encryption (IBE)** | Encrypt to a vault's `UID` — the same identity is derivable client-side at any future date without server-side coordination |
-| **Threshold (t-of-n)** | Privacy holds while < t servers are compromised; liveness holds while ≥ t are available |
-| **Move-defined access policy** | The `seal_approve_*` Move convention turns *"can this client decrypt?"* into *"does this Move function abort?"* |
-| **Hybrid KEM/DEM construction** | Encrypt small DEK with IBE; AES-GCM-encrypt large payload with DEK; one envelope on Walrus |
-| **Optional `backupKey` return** | User-side recovery if all key servers vanish; see [§9 Recovery Design](#9-recovery-design) |
+| **Threshold (t-of-n)**              | Privacy holds while < t servers are compromised; liveness holds while ≥ t are available                                     |
+| **Move-defined access policy**      | The `seal_approve_*` Move convention turns _"can this client decrypt?"_ into _"does this Move function abort?"_             |
+| **Hybrid KEM/DEM construction**     | Encrypt small DEK with IBE; AES-GCM-encrypt large payload with DEK; one envelope on Walrus                                  |
+| **Optional `backupKey` return**     | User-side recovery if all key servers vanish; see [§9 Recovery Design](#9-recovery-design)                                  |
 
 ### 5.2 The `seal_approve_release` convention
 
-Each Keepra vault is created with a single Seal identity (`id = bcs::to_bytes(vault.id)`). The Move package exposes one entry function:
+Each Keepra vault is created with a single Seal identity. **As-built (Phase 4):** the identity is `vault.seal_id` — a client-generated random 32-byte nonce committed into the frozen Vault — rather than `bcs::to_bytes(vault.id)`, because a vault's object ID isn't known until the creation tx executes (so it can't be the encryption identity in a single-PTB frozen-vault flow). The Move package exposes one entry function:
 
 ```move
 entry fun seal_approve_release(
@@ -180,9 +180,9 @@ Seal testnet now exposes two complementary server types — Keepra uses both:
 
 Keepra's two configurations:
 
-| Config | Server set | App-level threshold | When used |
-|---|---|---|---|
-| **Simple** | Committee only | `threshold: 1` | Phase 4 CLI roundtrip; quickest path to a working demo |
+| Config     | Server set                                          | App-level threshold | When used                                                                  |
+| ---------- | --------------------------------------------------- | ------------------- | -------------------------------------------------------------------------- |
+| **Simple** | Committee only                                      | `threshold: 1`      | Phase 4 CLI roundtrip; quickest path to a working demo                     |
 | **Hybrid** | Committee + 2 independents (e.g., Ruby + NodeInfra) | `threshold: 2` of 3 | Phase 7 onward; stronger pitch — committee compromise alone cannot decrypt |
 
 The server set is **chosen at sealing time and frozen into the Vault object** — per Seal's design, the committee cannot be rotated after encryption. Exact Object IDs and URLs live in [Seal-Config.md](../Seal-Config.md) (the canonical source) and are mirrored in [TechStack.md §6](./TechStack.md#6-endpoints-canonical-urls). For higher-paranoia vaults the wizard can extend to Committee + 4 independents at `threshold: 3 of 5`.
@@ -199,21 +199,21 @@ A beneficiary's claim flow uses Seal `SessionKey` (TTL = 10 minutes by default).
 
 ### 6.1 What we store on Walrus
 
-| Blob type | Contents | Typical size |
-|-----------|----------|-------------|
-| Vault payload | Seal-encrypted envelope: `header || sealed_DEK || iv || aes_ciphertext` | 10 KB – 5 MB |
-| Letter blob (optional) | Separately-encrypted "human readable" letter to beneficiary | 1 – 100 KB |
-| Site assets (stretch, Phase 14) | The Keepra SPA itself as a Walrus Site | ~5 MB |
+| Blob type                       | Contents                                                    | Typical size |
+| ------------------------------- | ----------------------------------------------------------- | ------------ | ---------- | --- | --- | --- | --------------- | ------------ |
+| Vault payload                   | Seal-encrypted envelope: `header                            |              | sealed_DEK |     | iv  |     | aes_ciphertext` | 10 KB – 5 MB |
+| Letter blob (optional)          | Separately-encrypted "human readable" letter to beneficiary | 1 – 100 KB   |
+| Site assets (stretch, Phase 14) | The Keepra SPA itself as a Walrus Site                      | ~5 MB        |
 
 ### 6.2 Why Walrus, not S3 / IPFS / Arweave
 
-| Property | S3 | IPFS | Arweave | **Walrus** |
-|----------|-----|------|---------|-----------|
-| BFT durability | ❌ single vendor | ⚠️ pinning required | ✅ | ✅ |
-| Native Sui object representation | ❌ | ❌ | ❌ | ✅ `Blob` object |
-| On-chain lifetime management | ❌ | ❌ | partial | ✅ via Move |
-| Verifiable availability proof | ❌ | ❌ | ❌ | ✅ |
-| Pairs natively with Seal IBE | ❌ | ❌ | ❌ | ✅ |
+| Property                         | S3               | IPFS                | Arweave | **Walrus**       |
+| -------------------------------- | ---------------- | ------------------- | ------- | ---------------- |
+| BFT durability                   | ❌ single vendor | ⚠️ pinning required | ✅      | ✅               |
+| Native Sui object representation | ❌               | ❌                  | ❌      | ✅ `Blob` object |
+| On-chain lifetime management     | ❌               | ❌                  | partial | ✅ via Move      |
+| Verifiable availability proof    | ❌               | ❌                  | ❌      | ✅               |
+| Pairs natively with Seal IBE     | ❌               | ❌                  | ❌      | ✅               |
 
 ### 6.3 Storage lifecycle
 
@@ -241,7 +241,7 @@ Keepra does **not** ever push raw seed phrases, raw private keys, or raw API tok
 
 ### 7.1 Why this matters
 
-The beneficiary of a Keepra vault is often a *non-crypto-native human* — a spouse, a child, an attorney. Forcing them to set up MetaMask, buy SUI for gas, and manage a seed phrase to claim their inheritance would defeat the entire product.
+The beneficiary of a Keepra vault is often a _non-crypto-native human_ — a spouse, a child, an attorney. Forcing them to set up MetaMask, buy SUI for gas, and manage a seed phrase to claim their inheritance would defeat the entire product.
 
 zkLogin solves this. The beneficiary signs in with Google (or Apple, Facebook, Twitch). A Sui address is derived deterministically from `(iss, aud, sub_hash, salt)` using a ZK proof — no seed phrase exists. Combined with **Enoki sponsored transactions**, the beneficiary's claim transaction is paid for by Keepra. Total UX: open email → click link → "Sign in with Google" → "Claim" → letters render.
 
@@ -290,11 +290,11 @@ policy.move         (top-level: seal_approve_release)
 
 ### 8.2 v1 conditions
 
-| Condition | Source of truth | Owner-revocable? |
-|-----------|----------------|-------------------|
-| **Inactivity** | Owner's heartbeat misses → on-chain check against `Clock` | Yes (heartbeat) |
-| **Guardian Quorum** | m-of-n attestations on `HeartbeatLog.attestations` | Yes (revoke vault) |
-| **DAO Vote** | A linked DAO governance proposal passes (see [§9 DAO Release Oracle](#9-dao-release-oracle)) | Yes (revoke vault) |
+| Condition           | Source of truth                                                                              | Owner-revocable?   |
+| ------------------- | -------------------------------------------------------------------------------------------- | ------------------ |
+| **Inactivity**      | Owner's heartbeat misses → on-chain check against `Clock`                                    | Yes (heartbeat)    |
+| **Guardian Quorum** | m-of-n attestations on `HeartbeatLog.attestations`                                           | Yes (revoke vault) |
+| **DAO Vote**        | A linked DAO governance proposal passes (see [§9 DAO Release Oracle](#9-dao-release-oracle)) | Yes (revoke vault) |
 
 A vault MUST configure **at least one** condition. The MVP wizard requires inactivity (the simplest dead-man) and lets the user optionally add guardians and/or a DAO linkage.
 
@@ -318,7 +318,7 @@ See [Roadmap.md](./Roadmap.md) for sequencing.
 
 Founder of a Sui protocol seals their admin keys + emergency runbook. The release condition: **a successful governance vote on the protocol's DAO**. If the founder vanishes, the community can formally invoke succession; once the vote passes, a pre-named backup multisig can claim the vault.
 
-This is decentralization at the *recovery layer* — the same DAO that governs the protocol governs its own emergency continuity. No external custodian.
+This is decentralization at the _recovery layer_ — the same DAO that governs the protocol governs its own emergency continuity. No external custodian.
 
 ### 9.2 Architecture
 
@@ -371,7 +371,7 @@ This is **the visual headline of the Sui Overflow pitch**. Three browser windows
 
 ### 9.5 Business model implications
 
-A DAO-treasury succession vault is sold *to the DAO itself* (B2B), priced at $5k–$50k/year per DAO. Compare to current alternatives (multi-day legal coordination, hardware-wallet hand-offs, "we'll figure it out") — Keepra is the only programmable answer. See [Roadmap.md § Business Model](./Roadmap.md#business-model).
+A DAO-treasury succession vault is sold _to the DAO itself_ (B2B), priced at $5k–$50k/year per DAO. Compare to current alternatives (multi-day legal coordination, hardware-wallet hand-offs, "we'll figure it out") — Keepra is the only programmable answer. See [Roadmap.md § Business Model](./Roadmap.md#business-model).
 
 ---
 
@@ -379,7 +379,7 @@ A DAO-treasury succession vault is sold *to the DAO itself* (B2B), priced at $5k
 
 ### 10.1 Design
 
-Guardians are *individuals the user trusts to attest the conditions of release have been met* — typically a spouse, a sibling, a family attorney, a co-founder, a senior community member.
+Guardians are _individuals the user trusts to attest the conditions of release have been met_ — typically a spouse, a sibling, a family attorney, a co-founder, a senior community member.
 
 At seal time, the owner specifies `(guardian_set: vector<address>, guardian_quorum: u8)`. Keepra mints one `GuardianCap` per guardian and transfers it to their address.
 
@@ -402,7 +402,7 @@ While the owner is alive and active, they can revoke a vault (`revoke_vault(&mut
 
 ### 10.4 Why not just multisig?
 
-A Sui multisig would let m-of-n co-sign a transaction to *transfer* an asset. That's a different problem. Guardians here are not co-signing a transfer; they are *attesting that the conditions of release are met*. The actual decryption happens client-side, off-chain, by the beneficiary's browser fetching Seal key shares.
+A Sui multisig would let m-of-n co-sign a transaction to _transfer_ an asset. That's a different problem. Guardians here are not co-signing a transfer; they are _attesting that the conditions of release are met_. The actual decryption happens client-side, off-chain, by the beneficiary's browser fetching Seal key shares.
 
 The guardian model also degrades gracefully: a single guardian attests → that's logged on-chain but not actionable (quorum not yet met). The owner can still revoke. A multisig has no equivalent in-between state.
 
@@ -414,13 +414,13 @@ The guardian model also degrades gracefully: a single guardian attests → that'
 
 ### 11.1 Layered defenses
 
-| Layer | Mechanism | In MVP? |
-|-------|-----------|---------|
-| **L1** | Diversified key-server committee — pick 3 operators across jurisdictions | ✅ default |
-| **L2** | Larger `n` with same `t` — pick `t=2, n=5` for resilience to 3 simultaneous failures | ✅ opt-in via wizard |
+| Layer  | Mechanism                                                                                 | In MVP?              |
+| ------ | ----------------------------------------------------------------------------------------- | -------------------- |
+| **L1** | Diversified key-server committee — pick 3 operators across jurisdictions                  | ✅ default           |
+| **L2** | Larger `n` with same `t` — pick `t=2, n=5` for resilience to 3 simultaneous failures      | ✅ opt-in via wizard |
 | **L3** | `backupKey` self-custody — user prints QR + 24-word mnemonic at seal time, stores offline | ✅ opt-in via wizard |
-| **L4** | Shamir-split the `backupKey` across guardians | v2 |
-| **L5** | Multi-encryption to two disjoint committees | v3 |
+| **L4** | Shamir-split the `backupKey` across guardians                                             | v2                   |
+| **L5** | Multi-encryption to two disjoint committees                                               | v3                   |
 
 ### 11.2 Keepra's stance: fail-secret by default
 
@@ -478,7 +478,7 @@ Modules: `vault`, `heartbeat`, `guardian`, `dao_oracle`, `dao_adapter`, `policy`
 
 ### 13.1 Automatic on-chain liveness
 
-Heartbeat by *any signed transaction from the owner's address* instead of an explicit "I'm alive" click. The indexer reads `suix_queryTransactionBlocks({ FromAddress: owner })` and treats the latest tx timestamp as the heartbeat. Multi-chain extension monitors EVM, Solana, Bitcoin addresses for the same purpose.
+Heartbeat by _any signed transaction from the owner's address_ instead of an explicit "I'm alive" click. The indexer reads `suix_queryTransactionBlocks({ FromAddress: owner })` and treats the latest tx timestamp as the heartbeat. Multi-chain extension monitors EVM, Solana, Bitcoin addresses for the same purpose.
 
 ### 13.2 Time-lock primitive
 

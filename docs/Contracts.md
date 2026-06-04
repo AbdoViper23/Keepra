@@ -505,6 +505,8 @@ The full DAO integration design (which adapters to ship, how to handle untrusted
 
 This is the **single Seal-facing module**. Key servers will only allow PTBs that call `seal_approve_*` functions in this package.
 
+> **As-built note (Phase 4).** The identity is bound to `vault.seal_id` (a client-generated random 32-byte nonce stored in the frozen Vault), **not** `bcs::to_bytes(object::id(vault))`. Reason: on Sui you cannot know a vault's object ID before the tx that creates it, so encrypt-to-object-id + create-in-one-PTB is impossible with a frozen vault. The `seal_id` approach is collision-safe (32 random bytes, namespaced by `packageId` inside Seal) and lets encryption happen before creation. The implemented function also extracts a `public(package) fun approve_release(...): bool` pure predicate (for unit testing) that `seal_approve_release` wraps with `assert!(..., ENoAccess)`. The pseudo-code below is the original design intent; the shipped source lives in `move/keepra/sources/policy.move`.
+
 ### `seal_approve_release` — the canonical Move source
 
 ```move
@@ -564,7 +566,7 @@ Seal allows multiple `seal_approve_*` functions, but Keepra deliberately ships *
 
 ### Future: `seal_approve_view_metadata` (Phase 14+)
 
-A second, more permissive function could let beneficiaries fetch *metadata* (e.g., the beneficiary letter, separately encrypted with a different identity) without unlocking the main vault. Deferred to v2.
+A second, more permissive function could let beneficiaries fetch _metadata_ (e.g., the beneficiary letter, separately encrypted with a different identity) without unlocking the main vault. Deferred to v2.
 
 ---
 
@@ -663,26 +665,26 @@ Keepra uses Sui's idiomatic **capability pattern**: rights are encoded as owned 
 
 ### Capabilities in Keepra
 
-| Cap | Owner | Grants |
-|---|---|---|
-| `GuardianCap` | Each guardian | Call `guardian::attest` for one specific vault |
-| `BeneficiaryCap` (optional) | Beneficiary | Mark vault as claimed (audit only) |
+| Cap                         | Owner         | Grants                                         |
+| --------------------------- | ------------- | ---------------------------------------------- |
+| `GuardianCap`               | Each guardian | Call `guardian::attest` for one specific vault |
+| `BeneficiaryCap` (optional) | Beneficiary   | Mark vault as claimed (audit only)             |
 
 ### Why this pattern wins
 
-| Property | How achieved |
-|---|---|
-| **Unforgeable** | Caps are created only inside `vault::create_and_seal`; no other function can mint them |
+| Property                  | How achieved                                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Unforgeable**           | Caps are created only inside `vault::create_and_seal`; no other function can mint them          |
 | **Transferable** (or not) | We choose `key`-only abilities to prevent transfer; v1 may add `store` for trustless delegation |
-| **Type-safe** | Move's type system prevents using a `GuardianCap` where a `BeneficiaryCap` is expected |
-| **Auditable** | Cap ownership shows up in `getOwnedObjects`; provable on-chain history |
+| **Type-safe**             | Move's type system prevents using a `GuardianCap` where a `BeneficiaryCap` is expected          |
+| **Auditable**             | Cap ownership shows up in `getOwnedObjects`; provable on-chain history                          |
 
 ### What we explicitly don't use
 
-| Anti-pattern | Why avoided |
-|---|---|
-| `owner: address` field check | Fragile; doesn't compose; doesn't transfer cleanly |
-| Allowlist table in Vault | Mutability complications; Vault is frozen |
+| Anti-pattern                   | Why avoided                                           |
+| ------------------------------ | ----------------------------------------------------- |
+| `owner: address` field check   | Fragile; doesn't compose; doesn't transfer cleanly    |
+| Allowlist table in Vault       | Mutability complications; Vault is frozen             |
 | ECDSA signature checks in Move | Off-chain key management; Sui's native auth is better |
 
 ---
@@ -718,13 +720,13 @@ The Vault struct includes a `version: u64` field. `seal_approve_release` could i
 
 ### Move-level tests (in `tests/`)
 
-| Test file | Coverage |
-|---|---|
-| `vault_tests.move` | `create_and_seal` happy path; validates frozen state; guardian set bounds |
-| `heartbeat_tests.move` | Heartbeat updates; owner check; revoked vault rejection |
-| `guardian_tests.move` | Attest happy path; cap forgery resistance; idempotency |
-| `dao_release_tests.move` | Propose + execute; double-execution prevention |
-| `policy_tests.move` | `seal_approve_release` for each release condition; OR composition; identity binding |
+| Test file                | Coverage                                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `vault_tests.move`       | `create_and_seal` happy path; validates frozen state; guardian set bounds                                 |
+| `heartbeat_tests.move`   | Heartbeat updates; owner check; revoked vault rejection                                                   |
+| `guardian_tests.move`    | Attest happy path; cap forgery resistance; idempotency                                                    |
+| `dao_release_tests.move` | Propose + execute; double-execution prevention                                                            |
+| `policy_tests.move`      | `seal_approve_release` for each release condition; OR composition; identity binding                       |
 | `integration_tests.move` | Full lifecycle: create → heartbeat → guardians attest → seal_approve passes → revoke → seal_approve fails |
 
 ### Integration tests (off-chain)
@@ -737,6 +739,7 @@ The Vault struct includes a `version: u64` field. `seal_approve_release` could i
 ### Property-based tests (optional, v1+)
 
 Generate random vault parameters and assert:
+
 - Decryption is permitted iff at least one condition is satisfied
 - Decryption is denied if revoked
 - Heartbeat after creation always extends the window
@@ -745,17 +748,17 @@ Generate random vault parameters and assert:
 
 ## 14. Gas Estimates (approximate, mainnet)
 
-| Operation | Approximate gas |
-|---|---|
-| `create_and_seal` (3 guardians, no DAO) | ~3M MIST |
-| `create_and_seal` (with DAO) | ~3.5M MIST |
-| `heartbeat` | ~700K MIST |
-| `heartbeat` + extend_blob | ~1.5M MIST |
-| `attest` | ~800K MIST |
-| `mark_triggered` | ~600K MIST |
-| `revoke_vault` | ~600K MIST |
-| `dao_release::propose` | ~1M MIST |
-| `dao_release::execute` (via adapter) | ~1.2M MIST |
+| Operation                                   | Approximate gas      |
+| ------------------------------------------- | -------------------- |
+| `create_and_seal` (3 guardians, no DAO)     | ~3M MIST             |
+| `create_and_seal` (with DAO)                | ~3.5M MIST           |
+| `heartbeat`                                 | ~700K MIST           |
+| `heartbeat` + extend_blob                   | ~1.5M MIST           |
+| `attest`                                    | ~800K MIST           |
+| `mark_triggered`                            | ~600K MIST           |
+| `revoke_vault`                              | ~600K MIST           |
+| `dao_release::propose`                      | ~1M MIST             |
+| `dao_release::execute` (via adapter)        | ~1.2M MIST           |
 | `seal_approve_release` (dry-run, off-chain) | N/A — no gas charged |
 
 Daemon and DAO-execute transactions are paid by Keepra ops budget. User-facing transactions (claim, attest) are paid by Enoki sponsorship. Owner-paid: vault creation (one-time) and heartbeat (recurring).

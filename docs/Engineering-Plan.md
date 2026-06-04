@@ -8,24 +8,24 @@
 
 ## Phase Progress Tracker
 
-| Phase | Owner | Days | Status | Commit |
-|---|---|---|---|---|
-| 0. Setup & CI | E4 | 1 | ✅ Done — added `internal/` for private docs (gitignored); `.claude/` gitignored | — |
-| 1. Move skeleton | E1 | 2 | ✅ Done — dropped `errors.move` (inlined per module); `public fun` instead of `public entry` (Move 2024 lint) | — |
-| 2. Heartbeat | E1 | 1 | ✅ Done — `revoke_vault` takes `&Clock` (spec called non-existent `current_time_ms` helper) | — |
-| 3. Guardian | E1 | 2 | ✅ Done — `mint_and_transfer` combines mint+transfer (spec's pattern fails to compile since GuardianCap lacks `store`) | — |
-| 4. Seal integration (CLI) | E2 | 3 | ⬜ Not started | — |
-| **5. Walrus integration (CUTOFF)** | E2 | 2 | ⬜ Not started | — |
-| 6. zkLogin + Enoki setup | E3 | 3 | ⬜ Not started | — |
-| 7. Vault creation UI | E3 | 4 | ⬜ Not started | — |
-| 8. Beneficiary claim page | E3 | 4 | ⬜ Not started | — |
-| 9. Heartbeat dashboard | E3 | 2 | ⬜ Not started | — |
-| 10. Notification daemon | E4 | 3 | ⬜ Not started | — |
-| 11. Enoki sponsorship | E2 | 2 | ⬜ Not started | — |
-| 12. Immutability hardening | E1 | 2 | ⬜ Not started | — |
-| 13. DAO release flow | E1+E2 | 4 | ⬜ Not started | — |
-| 14. Demo polish + video | all | 3 | ⬜ Not started | — |
-| 15. Walrus Sites (stretch) | E4 | 1 | ⬜ Not started | — |
+| Phase                              | Owner | Days | Status                                                                                                                 | Commit |
+| ---------------------------------- | ----- | ---- | ---------------------------------------------------------------------------------------------------------------------- | ------ |
+| 0. Setup & CI                      | E4    | 1    | ✅ Done — added `internal/` for private docs (gitignored); `.claude/` gitignored                                       | —      |
+| 1. Move skeleton                   | E1    | 2    | ✅ Done — dropped `errors.move` (inlined per module); `public fun` instead of `public entry` (Move 2024 lint)          | —      |
+| 2. Heartbeat                       | E1    | 1    | ✅ Done — `revoke_vault` takes `&Clock` (spec called non-existent `current_time_ms` helper)                            | —      |
+| 3. Guardian                        | E1    | 2    | ✅ Done — `mint_and_transfer` combines mint+transfer (spec's pattern fails to compile since GuardianCap lacks `store`) | —      |
+| 4. Seal integration (CLI)          | E2    | 3    | ✅ Done — identity binds to `vault.seal_id` (not object::id); roundtrip green on testnet; pkg `0x25a0…5d73`            | —      |
+| **5. Walrus integration (CUTOFF)** | E2    | 2    | ⬜ Not started                                                                                                         | —      |
+| 6. zkLogin + Enoki setup           | E3    | 3    | ⬜ Not started                                                                                                         | —      |
+| 7. Vault creation UI               | E3    | 4    | ⬜ Not started                                                                                                         | —      |
+| 8. Beneficiary claim page          | E3    | 4    | ⬜ Not started                                                                                                         | —      |
+| 9. Heartbeat dashboard             | E3    | 2    | ⬜ Not started                                                                                                         | —      |
+| 10. Notification daemon            | E4    | 3    | ⬜ Not started                                                                                                         | —      |
+| 11. Enoki sponsorship              | E2    | 2    | ⬜ Not started                                                                                                         | —      |
+| 12. Immutability hardening         | E1    | 2    | ⬜ Not started                                                                                                         | —      |
+| 13. DAO release flow               | E1+E2 | 4    | ⬜ Not started                                                                                                         | —      |
+| 14. Demo polish + video            | all   | 3    | ⬜ Not started                                                                                                         | —      |
+| 15. Walrus Sites (stretch)         | E4    | 1    | ⬜ Not started                                                                                                         | —      |
 
 Total: ~37 dev-days across 4 engineers = ~10 calendar days with parallelism. 6-week timeline absorbs slippage.
 
@@ -550,6 +550,7 @@ cd apps/web && pnpm test:e2e -- claim-vault
 ### Critical: this is THE demo flow
 
 This page is what the hackathon judges will see in the 3-minute demo video. Spend extra time on:
+
 - Loading states (no blank screens)
 - Error states (clear language; never expose stack traces)
 - Mobile responsiveness (judges may watch on phones)

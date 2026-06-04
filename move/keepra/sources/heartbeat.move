@@ -81,4 +81,8 @@ public fun heartbeat(log: &mut HeartbeatLog, clock: &Clock, ctx: &TxContext) {
     events::emit_heartbeat(log.vault_id, now_ms);
 }
 
-// Phase 3+ adds setters: set_triggered(), add_attestation(), set_dao_released().
+// Phase 13 adds the real set_dao_released() (called by the DAO release flow).
+#[test_only]
+public fun set_dao_released_for_testing(log: &mut HeartbeatLog, released: bool) {
+    log.dao_released = released;
+}
