@@ -23,6 +23,7 @@ fun setup_vault(scenario: &mut ts::Scenario): Clock {
 
     vault::create_and_seal(
         b"blob",
+        option::none(),
         b"seal-id",
         1,
         vector[],

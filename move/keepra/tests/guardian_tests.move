@@ -24,6 +24,7 @@ fun setup_vault(scenario: &mut ts::Scenario, guardians: vector<address>): Clock 
 
     vault::create_and_seal(
         b"blob",
+        option::none(),
         b"seal-id",
         1,
         vector[],
@@ -89,7 +90,7 @@ fun test_attest_wrong_vault_cap_fails() {
 
     // Vault A: GUARDIAN_1 + GUARDIAN_2.
     vault::create_and_seal(
-        b"blob-A", b"seal-A", 1, vector[], INACTIVITY_SECS,
+        b"blob-A", option::none(), b"seal-A", 1, vector[], INACTIVITY_SECS,
         vector[GUARDIAN_1, GUARDIAN_2], 2,
         option::none(), option::none(),
         b"email-A", option::none(),
@@ -99,7 +100,7 @@ fun test_attest_wrong_vault_cap_fails() {
     // Vault B: GUARDIAN_2 + GUARDIAN_3 — GUARDIAN_1 deliberately excluded.
     scenario.next_tx(OWNER);
     vault::create_and_seal(
-        b"blob-B", b"seal-B", 1, vector[], INACTIVITY_SECS,
+        b"blob-B", option::none(), b"seal-B", 1, vector[], INACTIVITY_SECS,
         vector[GUARDIAN_2, GUARDIAN_3], 2,
         option::none(), option::none(),
         b"email-B", option::none(),

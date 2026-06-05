@@ -1,11 +1,10 @@
 /**
- * Phase 4 — Seal roundtrip CLI.
+ * Phase 5 — Seal + Walrus roundtrip CLI (MVP).
  *
- * Proves the core cryptographic primitive end-to-end on Sui testnet:
- *   encrypt (Seal IBE) -> seal on-chain (create_and_seal, frozen Vault)
- *   -> satisfy a release condition (guardian attest) -> decrypt -> byte-match.
- *
- * Ciphertext stays in memory (Walrus upload arrives in Phase 5).
+ * Proves the full primitive end-to-end on Sui testnet:
+ *   encrypt (Seal IBE) -> upload ciphertext to Walrus -> seal on-chain
+ *   (create_and_seal, frozen Vault) -> guardian attest -> fetch from Walrus
+ *   (with aggregator fallback) -> sha256-verify -> decrypt -> byte-match.
  */
 import 'dotenv/config';
 import { SuiJsonRpcClient, type SuiObjectChange } from '@mysten/sui/jsonRpc';
@@ -15,7 +14,10 @@ import { decodeSuiPrivateKey } from '@mysten/sui/cryptography';
 import { toHex } from '@mysten/sui/utils';
 import { SealClient, SessionKey } from '@mysten/seal';
 import { DemType } from '@mysten/seal';
-import { webcrypto } from 'node:crypto';
+import { createHash, webcrypto } from 'node:crypto';
+import { uploadBlob, downloadBlob, getWalrusConfig } from '@keepra/shared';
+
+const sha256 = (b: Uint8Array): string => createHash('sha256').update(b).digest('hex');
 
 type CreatedChange = Extract<SuiObjectChange, { type: 'created' }>;
 const isCreated =
@@ -78,15 +80,28 @@ async function main() {
   });
   log('Encrypted');
 
-  // ─── 2. Seal on-chain: create_and_seal (frozen Vault + shared HeartbeatLog + GuardianCap) ───
+  // ─── 2. Upload ciphertext to Walrus (send_object_to => CLI owns the Blob, for Phase 9 extension) ───
+  const walrusCfg = getWalrusConfig();
+  console.log(`Walrus publisher: ${walrusCfg.publisherUrl}`);
+  const { blobId, blobObjectId } = await uploadBlob(encryptedObject, {
+    config: walrusCfg,
+    sendObjectTo: address,
+  });
+  const blobIdBytes = Array.from(new TextEncoder().encode(blobId));
+  log(
+    `Uploaded to Walrus (blobId ${blobId.slice(0, 12)}…, object ${blobObjectId?.slice(0, 10) ?? 'n/a'}…)`,
+  );
+
+  // ─── 3. Seal on-chain: create_and_seal (frozen Vault + shared HeartbeatLog + GuardianCap) ───
   const createTx = new Transaction();
   createTx.moveCall({
     target: `${packageId}::vault::create_and_seal`,
     arguments: [
-      createTx.pure.vector('u8', Array.from(new TextEncoder().encode('in-memory-no-walrus-yet'))),
+      createTx.pure.vector('u8', blobIdBytes), // walrus_blob_id (content id)
+      createTx.pure.option('id', blobObjectId ?? null), // walrus_blob_object_id (Sui Blob object)
       createTx.pure.vector('u8', Array.from(seal_id)),
       createTx.pure.u8(1), // threshold
-      createTx.pure.vector('id', []), // key_server_ids (empty in Phase 4)
+      createTx.pure.vector('id', []), // key_server_ids (empty in the CLI roundtrip)
       createTx.pure.u64(1), // inactivity_seconds (short; we release via quorum anyway)
       createTx.pure.vector('address', [address]), // guardian_set: CLI is the sole guardian
       createTx.pure.u8(1), // guardian_quorum
@@ -161,9 +176,20 @@ async function main() {
   });
   const txBytes = await approveTx.build({ client: suiClient, onlyTransactionKind: true });
 
-  // ─── 6. Decrypt ───
+  // ─── 6. Fetch ciphertext back from Walrus (aggregator fallback) + integrity check ───
+  const fetched = await downloadBlob(blobId, { config: walrusCfg });
+  const uploadedHash = sha256(encryptedObject);
+  const fetchedHash = sha256(fetched);
+  if (uploadedHash !== fetchedHash) {
+    throw new Error(
+      `Walrus integrity check failed!\n  uploaded sha256: ${uploadedHash}\n  fetched sha256:  ${fetchedHash}`,
+    );
+  }
+  log(`Fetched from Walrus (sha256 verified: ${fetchedHash.slice(0, 16)}…)`);
+
+  // ─── 7. Decrypt the bytes fetched from Walrus (not the in-memory copy) ───
   const decrypted = await sealClient.decrypt({
-    data: encryptedObject,
+    data: fetched,
     sessionKey,
     txBytes,
   });
@@ -177,7 +203,7 @@ async function main() {
   log('Plaintext matches');
 
   console.log(
-    '\n✓ Encrypted → ✓ Sealed on-chain → ✓ Attested (quorum) → ✓ Decrypted → ✓ Plaintext matches',
+    '\n✓ Encrypted → ✓ Uploaded to Walrus → ✓ Sealed on-chain → ✓ Attested → ✓ Fetched from Walrus → ✓ Decrypted → ✓ Plaintext matches',
   );
 }
 

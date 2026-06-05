@@ -18,6 +18,7 @@ public struct Vault has key, store {
     id: UID,
     owner: address,
     walrus_blob_id: vector<u8>,
+    walrus_blob_object_id: Option<ID>, // Sui Blob object (for lifetime extension in Phase 9)
     seal_id: vector<u8>,
     threshold: u8,
     key_server_ids: vector<ID>,
@@ -35,6 +36,7 @@ public struct Vault has key, store {
 
 public fun create_and_seal(
     blob_id: vector<u8>,
+    blob_object_id: Option<ID>,
     seal_id: vector<u8>,
     threshold: u8,
     key_server_ids: vector<ID>,
@@ -72,6 +74,7 @@ public fun create_and_seal(
         id: vault_uid,
         owner,
         walrus_blob_id: blob_id,
+        walrus_blob_object_id: blob_object_id,
         seal_id,
         threshold,
         key_server_ids,
@@ -124,6 +127,7 @@ public fun revoke_vault(log: &mut HeartbeatLog, clock: &Clock, ctx: &TxContext) 
 public fun id(v: &Vault): ID { object::id(v) }
 public fun owner(v: &Vault): address { v.owner }
 public fun walrus_blob_id(v: &Vault): &vector<u8> { &v.walrus_blob_id }
+public fun walrus_blob_object_id(v: &Vault): &Option<ID> { &v.walrus_blob_object_id }
 public fun seal_id(v: &Vault): &vector<u8> { &v.seal_id }
 public fun threshold(v: &Vault): u8 { v.threshold }
 public fun key_server_ids(v: &Vault): &vector<ID> { &v.key_server_ids }

@@ -10,6 +10,7 @@
   "dependencies": {
     "@mysten/sui": "2.17.0",
     "@mysten/seal": "1.1.3",
+    "@keepra/shared": "workspace:*",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {

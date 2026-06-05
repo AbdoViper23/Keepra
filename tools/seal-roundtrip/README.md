@@ -1,13 +1,15 @@
-# seal-roundtrip (Phase 4)
+# seal-roundtrip (Phase 4–5)
 
-End-to-end proof of Keepra's cryptographic core on **Sui testnet**:
+End-to-end proof of Keepra's cryptographic + storage core on **Sui testnet**:
 
 ```
-encrypt (Seal IBE) → seal on-chain (create_and_seal, frozen Vault)
-  → guardian attest (satisfies quorum) → decrypt → byte-for-byte match
+encrypt (Seal IBE) → upload ciphertext to Walrus → seal on-chain
+  (create_and_seal, frozen Vault) → guardian attest (satisfies quorum)
+  → fetch from Walrus (aggregator fallback) → sha256-verify → decrypt → byte-match
 ```
 
-Ciphertext stays in memory here. Walrus upload/download is added in Phase 5.
+The ciphertext physically lives on Walrus; the roundtrip fetches it back (trying each
+aggregator in order) and verifies sha256 equality before decrypting.
 
 ## Prereqs
 
@@ -34,7 +36,14 @@ pnpm --filter @keepra/seal-roundtrip start
 Expected output ends with:
 
 ```
-✓ Encrypted → ✓ Sealed on-chain → ✓ Attested (quorum) → ✓ Decrypted → ✓ Plaintext matches
+✓ Encrypted → ✓ Uploaded to Walrus → ✓ Sealed on-chain → ✓ Attested → ✓ Fetched from Walrus → ✓ Decrypted → ✓ Plaintext matches
+```
+
+To prove aggregator fallback, prepend a bogus aggregator and confirm it still completes:
+
+```bash
+WALRUS_AGGREGATORS="https://bogus.invalid.example,https://aggregator.walrus-testnet.walrus.space" \
+  pnpm --filter @keepra/seal-roundtrip start
 ```
 
 ## Testnet version notes

@@ -2,6 +2,7 @@
   "extends": "@keepra/tsconfig/node.json",
   "compilerOptions": {
     "noEmit": true,
+    "lib": ["es2022", "dom", "dom.iterable"],
     "types": ["node"]
   },
   "include": ["*.ts"],

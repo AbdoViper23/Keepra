@@ -25,6 +25,7 @@ fun test_create_and_seal_happy_path() {
 
     vault::create_and_seal(
         TEST_BLOB_ID,
+        option::none(),
         TEST_SEAL_ID,
         1, // threshold
         vector[], // key_server_ids — empty allowed when threshold matches (validated downstream in Phase 4)
@@ -65,6 +66,7 @@ fun test_create_and_seal_zero_quorum_fails() {
 
     vault::create_and_seal(
         TEST_BLOB_ID,
+        option::none(),
         TEST_SEAL_ID,
         1,
         vector[],
@@ -91,6 +93,7 @@ fun test_create_and_seal_quorum_exceeds_set_fails() {
 
     vault::create_and_seal(
         TEST_BLOB_ID,
+        option::none(),
         TEST_SEAL_ID,
         1,
         vector[],
@@ -117,6 +120,7 @@ fun test_create_and_seal_zero_inactivity_fails() {
 
     vault::create_and_seal(
         TEST_BLOB_ID,
+        option::none(),
         TEST_SEAL_ID,
         1,
         vector[],

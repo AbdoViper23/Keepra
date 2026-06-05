@@ -17,6 +17,7 @@
   "devDependencies": {
     "@keepra/eslint-config": "workspace:*",
     "@keepra/tsconfig": "workspace:*",
+    "@types/node": "^20.16.0",
     "eslint": "^9.15.0",
     "typescript": "^5.6.3"
   }

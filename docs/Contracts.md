@@ -74,6 +74,7 @@ public struct Vault has key, store {
     id: UID,
     owner: address,                    // recorded at seal time; never re-checked at decrypt
     walrus_blob_id: vector<u8>,        // Walrus content-addressed ID (raw bytes)
+    walrus_blob_object_id: Option<ID>, // [Phase 5 as-built] Sui Blob object, for lifetime extension (Phase 9)
     seal_id: vector<u8>,               // IBE identity bytes (typically vault UID)
     threshold: u8,                     // Seal threshold t
     key_server_ids: vector<ID>,        // KeyServer object IDs chosen at seal time (frozen)
