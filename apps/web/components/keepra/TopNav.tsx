@@ -9,6 +9,7 @@ import { ConnectButton } from './ConnectButton';
 const LINKS = [
   { href: '/create', label: 'Create' },
   { href: '/dashboard', label: 'Dashboard' },
+  { href: '/dao', label: 'DAO' },
 ];
 
 export function TopNav() {

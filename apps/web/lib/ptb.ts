@@ -78,6 +78,73 @@ export function buildAttestTx(capId: string, logId: string): Transaction {
   return tx;
 }
 
+// ─── DAO Release Oracle (keepra::simple_voting + dao_release + adapter) ───
+
+/** simple_voting::create_dao(name, members, threshold). */
+export function buildCreateDaoTx(name: string, members: string[], threshold: number): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: `${KEEPRA_PKG}::simple_voting::create_dao`,
+    arguments: [
+      tx.pure.string(name),
+      tx.pure.vector('address', members),
+      tx.pure.u64(BigInt(threshold)),
+    ],
+  });
+  return tx;
+}
+
+/** dao_release::propose(vault, clock) — opens a shared DAOReleaseRequest for a DAO-configured vault. */
+export function buildProposeReleaseTx(vaultId: string): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: `${KEEPRA_PKG}::dao_release::propose`,
+    arguments: [tx.object(vaultId), tx.object(CLOCK_ID)],
+  });
+  return tx;
+}
+
+/** simple_voting::propose(dao, target) — opens a VotingProposal targeting the release request. */
+export function buildProposeVotingTx(daoId: string, targetId: string): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: `${KEEPRA_PKG}::simple_voting::propose`,
+    arguments: [tx.object(daoId), tx.pure.id(targetId)],
+  });
+  return tx;
+}
+
+/** simple_voting::vote(dao, proposal, yes). */
+export function buildVoteTx(daoId: string, proposalId: string, yes: boolean): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: `${KEEPRA_PKG}::simple_voting::vote`,
+    arguments: [tx.object(daoId), tx.object(proposalId), tx.pure.bool(yes)],
+  });
+  return tx;
+}
+
+/** dao_adapter_simple_voting::execute_release(req, log, dao, prop, clock) — flips dao_released. */
+export function buildExecuteReleaseTx(args: {
+  requestId: string;
+  logId: string;
+  daoId: string;
+  proposalId: string;
+}): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: `${KEEPRA_PKG}::dao_adapter_simple_voting::execute_release`,
+    arguments: [
+      tx.object(args.requestId),
+      tx.object(args.logId),
+      tx.object(args.daoId),
+      tx.object(args.proposalId),
+      tx.object(CLOCK_ID),
+    ],
+  });
+  return tx;
+}
+
 /**
  * Serializes the seal_approve_release PTB (transaction-kind only). Key servers
  * dry-run these bytes; the PTB is never executed.

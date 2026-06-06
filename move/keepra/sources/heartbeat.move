@@ -70,6 +70,11 @@ public(package) fun add_attestation(log: &mut HeartbeatLog, who: address) {
     };
 }
 
+// Flipped by keepra::dao_release::set_released_internal once a DAO authorizes release.
+public(package) fun set_dao_released(log: &mut HeartbeatLog) {
+    log.dao_released = true;
+}
+
 // ─── Entry: owner resets the inactivity timer ("I'm alive") ───
 
 public fun heartbeat(log: &mut HeartbeatLog, clock: &Clock, ctx: &TxContext) {

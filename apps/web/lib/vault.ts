@@ -17,6 +17,8 @@ export interface VaultView {
   inactivitySeconds: number;
   guardianQuorum: number;
   guardianSet: string[];
+  daoId: string | null;
+  daoThreshold: number | null;
   heartbeatLogId: string;
   beneficiaryEmailHashHex: string;
   createdAtMs: number;
@@ -71,6 +73,20 @@ function asStringArray(v: unknown): string[] {
   return Array.isArray(v) ? v.map(String) : [];
 }
 
+/** Move Option<T> in getObject content can be null, the unwrapped value, or {vec:[...]}. */
+function optionToString(v: unknown): string | null {
+  if (v == null) return null;
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return v.length ? String(v[0]) : null;
+  if (typeof v === 'object') {
+    const vec =
+      (v as { vec?: unknown; fields?: { vec?: unknown } }).vec ??
+      (v as { fields?: { vec?: unknown } }).fields?.vec;
+    if (Array.isArray(vec)) return vec.length ? String(vec[0]) : null;
+  }
+  return null;
+}
+
 export function parseVault(obj: SuiObjectResponse): VaultView {
   const f = extractFields(obj);
   const sealId = vecU8ToBytes(f.seal_id);
@@ -85,6 +101,11 @@ export function parseVault(obj: SuiObjectResponse): VaultView {
     inactivitySeconds: Number(f.inactivity_seconds ?? 0),
     guardianQuorum: Number(f.guardian_quorum ?? 0),
     guardianSet: asStringArray(f.guardian_set),
+    daoId: optionToString(f.dao_id),
+    daoThreshold: (() => {
+      const s = optionToString(f.dao_threshold);
+      return s == null ? null : Number(s);
+    })(),
     heartbeatLogId: String(f.heartbeat_log_id ?? ''),
     beneficiaryEmailHashHex: toHex(vecU8ToBytes(f.beneficiary_email_hash)),
     createdAtMs: Number(f.created_at_ms ?? 0),

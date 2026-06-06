@@ -19,6 +19,9 @@ export interface CreateVaultInput {
   guardianAddresses: string[];
   guardianQuorum: number;
   beneficiaryEmail: string;
+  /** Optional DAO release condition: a VotingDAO object id + its threshold. */
+  daoId?: string | null;
+  daoThreshold?: number | null;
 }
 
 export interface CreateVaultResult {
@@ -69,8 +72,8 @@ export function useCreateVault() {
         inactivitySeconds: input.inactivitySeconds,
         guardianSet,
         guardianQuorum: Math.max(1, input.guardianQuorum),
-        daoId: null,
-        daoThreshold: null,
+        daoId: input.daoId ?? null,
+        daoThreshold: input.daoThreshold ?? null,
         beneficiaryEmailHash,
         beneficiaryZkSub: null,
       });

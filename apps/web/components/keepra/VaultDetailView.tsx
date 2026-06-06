@@ -15,6 +15,7 @@ import { VaultStateBadge } from '@/components/keepra/VaultStateBadge';
 import { CountdownTimer } from '@/components/keepra/CountdownTimer';
 import { ExplorerLink } from '@/components/keepra/ExplorerLink';
 import { formatBlobId, formatDate, truncateId } from '@/lib/keepra/format';
+import { useProposeRelease } from '@/hooks/useDao';
 import { toast } from 'sonner';
 
 export function VaultDetailView({ id }: { id: string }) {
@@ -104,6 +105,9 @@ export function VaultDetailView({ id }: { id: string }) {
           )}
           {cap && data.state === 'Sealed' && (
             <AttestBlock vaultId={data.vault.vaultId} capId={cap.capId} logId={data.log.logId} />
+          )}
+          {data.vault.daoId && data.state !== 'Revoked' && (
+            <DaoReleaseBlock vaultId={data.vault.vaultId} daoId={data.vault.daoId} />
           )}
           {isOwner && !data.log.revoked && (
             <RevokeBlock vaultId={data.vault.vaultId} logId={data.log.logId} />
@@ -246,6 +250,63 @@ function ClaimLinkBlock({ url }: { url: string }) {
           {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
         </button>
       </div>
+    </div>
+  );
+}
+
+function DaoReleaseBlock({ vaultId, daoId }: { vaultId: string; daoId: string }) {
+  const { proposeRelease, isPending } = useProposeRelease();
+  const [proposalId, setProposalId] = useState('');
+  const [copied, setCopied] = useState(false);
+  const link =
+    typeof window !== 'undefined' && proposalId
+      ? `${window.location.origin}/dao?proposal=${proposalId}`
+      : '';
+
+  return (
+    <div className="p-5 border border-primary/40 bg-primary/5">
+      <div className="font-mono text-[10px] uppercase tracking-widest text-primary mb-2">
+        DAO release
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        This vault can be released by a DAO vote ({truncateId(daoId)}).
+      </p>
+      {!proposalId ? (
+        <button
+          onClick={async () => {
+            const r = await proposeRelease(vaultId, daoId);
+            if (r) setProposalId(r.proposalId);
+          }}
+          disabled={isPending}
+          className="w-full px-4 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-sm hover:brightness-110 disabled:opacity-50 transition-all"
+        >
+          {isPending ? 'Proposing…' : 'Propose DAO release'}
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Share with DAO members to vote:</p>
+          <div className="flex items-center gap-2 p-2 bg-background border border-border">
+            <code className="flex-1 font-mono text-[10px] truncate">{link}</code>
+            <button
+              onClick={async () => {
+                await navigator.clipboard.writeText(link);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+              className="size-7 grid place-items-center hover:bg-foreground/5"
+              aria-label="Copy voting link"
+            >
+              {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+            </button>
+          </div>
+          <a
+            href={`/dao?proposal=${proposalId}`}
+            className="inline-block text-xs text-primary underline"
+          >
+            Open the voting console →
+          </a>
+        </div>
+      )}
     </div>
   );
 }

@@ -51,6 +51,9 @@ export function CreateWizard() {
   const [guardianInput, setGuardianInput] = useState('');
   const [guardians, setGuardians] = useState<string[]>([]);
   const [quorum, setQuorum] = useState(1);
+  const [daoEnabled, setDaoEnabled] = useState(false);
+  const [daoObjectId, setDaoObjectId] = useState('');
+  const [daoThreshold, setDaoThreshold] = useState(2);
 
   // Step 3
   const [email, setEmail] = useState('');
@@ -100,15 +103,26 @@ export function CreateWizard() {
     if (guardiansEnabled && guardians.length >= quorum && quorum >= 1) {
       parts.push(` or ${quorum} of ${guardians.length} guardians approve`);
     }
+    if (daoEnabled && isValidSuiAddress(daoObjectId)) {
+      parts.push(` or the DAO votes to release (${daoThreshold} yes)`);
+    }
     return parts.join('') + '.';
-  }, [inactivityLabel, guardiansEnabled, guardians, quorum]);
+  }, [inactivityLabel, guardiansEnabled, guardians, quorum, daoEnabled, daoObjectId, daoThreshold]);
 
   // Validation
   const canNext = (() => {
     if (step === 1) return text.trim().length > 0 || files.length > 0;
     if (step === 2) {
-      if (!guardiansEnabled) return true;
-      return guardians.length >= 1 && quorum >= 1 && quorum <= guardians.length;
+      if (
+        guardiansEnabled &&
+        !(guardians.length >= 1 && quorum >= 1 && quorum <= guardians.length)
+      ) {
+        return false;
+      }
+      if (daoEnabled && !(isValidSuiAddress(daoObjectId) && daoThreshold >= 1)) {
+        return false;
+      }
+      return true;
     }
     if (step === 3) return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (step === 4) return true;
@@ -129,6 +143,8 @@ export function CreateWizard() {
         guardianAddresses: guardiansEnabled ? guardians : [],
         guardianQuorum: guardiansEnabled ? quorum : 1,
         beneficiaryEmail: email,
+        daoId: daoEnabled ? daoObjectId.trim() : null,
+        daoThreshold: daoEnabled ? daoThreshold : null,
       });
       toast.success('Vault sealed.');
       router.push(`/vault/${res.vaultId}`);
@@ -345,17 +361,56 @@ export function CreateWizard() {
               )}
             </div>
 
-            {/* DAO */}
-            <div className="p-6 border border-border/40 bg-background/40 opacity-70">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-serif italic text-2xl opacity-60">DAO governance vote</h3>
-                <span className="px-2 py-0.5 border border-primary/30 text-[9px] text-primary font-mono rounded-full uppercase">
-                  Coming Soon
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground opacity-70">
-                Release based on a community vote. Available in a future release.
-              </p>
+            {/* DAO governance vote */}
+            <div>
+              <label className="flex items-center justify-between mb-4 cursor-pointer">
+                <div>
+                  <h3 className="font-serif italic text-2xl">DAO governance vote</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    A DAO can vote to release. Need a DAO?{' '}
+                    <a href="/dao" target="_blank" className="text-primary underline">
+                      Create one
+                    </a>
+                    .
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={daoEnabled}
+                  onChange={(e) => setDaoEnabled(e.target.checked)}
+                  className="size-4 accent-[color:var(--color-primary)]"
+                />
+              </label>
+              {daoEnabled && (
+                <div className="space-y-3 pl-4 border-l-2 border-border">
+                  <div>
+                    <label className="block font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+                      DAO object id
+                    </label>
+                    <input
+                      value={daoObjectId}
+                      onChange={(e) => setDaoObjectId(e.target.value)}
+                      placeholder="0x… (a SimpleVoting DAO)"
+                      className="w-full p-3 border border-border bg-card font-mono text-sm focus:outline-none focus:border-foreground/40"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Yes votes needed
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={daoThreshold}
+                      onChange={(e) => setDaoThreshold(Math.max(1, Number(e.target.value)))}
+                      className="w-20 p-2 border border-border bg-card font-mono text-sm"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Must match the DAO&apos;s own threshold for the release to execute.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Preview */}
