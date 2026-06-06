@@ -19,6 +19,7 @@ import { bytesToSize, isValidSuiAddress, truncateId } from '@/lib/keepra/format'
 import { cn } from '@/lib/utils';
 
 const INACTIVITY_OPTIONS = [
+  { label: '30 seconds (demo)', seconds: 30 },
   { label: '2 minutes (demo)', seconds: 120 },
   { label: '7 days', seconds: 7 * 86400 },
   { label: '30 days', seconds: 30 * 86400 },
