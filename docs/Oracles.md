@@ -1,6 +1,6 @@
 # Oracles
 
-> Keepra's oracle architecture. The **DAO Release Oracle** is built before submission. All other oracle designs are **future work** — designs only, to be refined once the team decides on the decentralization model.
+> Keepra's oracle architecture. The **DAO Release Oracle** is built first. All other oracle designs are **future work** — designs only, to be refined once the team decides on the decentralization model.
 
 ---
 
@@ -10,27 +10,27 @@ In Keepra, an **oracle** is anything that produces an on-chain signal that `seal
 
 The MVP has three release conditions:
 
-| Condition | Source of truth | Oracle needed? |
-|---|---|---|
-| **Inactivity** | On-chain heartbeat timestamp | No (purely on-chain) |
-| **Guardian quorum** | On-chain attestation count | No (purely on-chain) |
-| **DAO release** | External DAO governance result | **Yes — this is the DAO Release Oracle** |
+| Condition           | Source of truth                | Oracle needed?                           |
+| ------------------- | ------------------------------ | ---------------------------------------- |
+| **Inactivity**      | On-chain heartbeat timestamp   | No (purely on-chain)                     |
+| **Guardian quorum** | On-chain attestation count     | No (purely on-chain)                     |
+| **DAO release**     | External DAO governance result | **Yes — this is the DAO Release Oracle** |
 
 Future conditions (post-MVP) require new oracles:
 
-| Future condition | Oracle |
-|---|---|
-| "User is legally deceased" | Death certificate oracle |
-| "An obituary appeared in trusted news" | News scraper + AI oracle |
-| "Government record indicates death" | VitalChek / SSA API oracle |
-| "Trusted attorney attests release" | Single-attestor oracle |
-| "Absolute time has passed" | Sui Clock (already on-chain — not an oracle) |
+| Future condition                       | Oracle                                       |
+| -------------------------------------- | -------------------------------------------- |
+| "User is legally deceased"             | Death certificate oracle                     |
+| "An obituary appeared in trusted news" | News scraper + AI oracle                     |
+| "Government record indicates death"    | VitalChek / SSA API oracle                   |
+| "Trusted attorney attests release"     | Single-attestor oracle                       |
+| "Absolute time has passed"             | Sui Clock (already on-chain — not an oracle) |
 
 This file documents the DAO Release Oracle in detail, then sketches future oracle designs at the level needed to iterate on decentralization.
 
 ---
 
-## 2. The DAO Release Oracle (MVP+, built before submission)
+## 2. The DAO Release Oracle (MVP+)
 
 ### 2.1 Purpose
 
@@ -40,12 +40,12 @@ Allow a user to configure a **DAO governance proposal** as one of the release co
 
 The DAO Release Oracle has **three strategic advantages** over other oracle types:
 
-| Reason | Detail |
-|---|---|
-| **Business model** | DAOs and protocol foundations have treasuries and budget for succession infrastructure. They are the most willing-to-pay customers for Keepra. |
-| **Easiest to decentralize** | The DAO itself is already decentralized — Keepra just reads its on-chain state. No new trust assumptions. |
-| **Demo-friendly** | "DAO votes to release founder's keys" is an immediately understandable, dramatic story for hackathon judges. |
-| **Composes with existing Sui ecosystem** | Sui has Multisig, Move-based governance modules, custom DAO frameworks — Keepra plugs into all of them via adapters. |
+| Reason                                   | Detail                                                                                                                                         |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Business model**                       | DAOs and protocol foundations have treasuries and budget for succession infrastructure. They are the most willing-to-pay customers for Keepra. |
+| **Easiest to decentralize**              | The DAO itself is already decentralized — Keepra just reads its on-chain state. No new trust assumptions.                                      |
+| **Demo-friendly**                        | "DAO votes to release founder's keys" is an immediately understandable, dramatic story for reviewers.                                          |
+| **Composes with existing Sui ecosystem** | Sui has Multisig, Move-based governance modules, custom DAO frameworks — Keepra plugs into all of them via adapters.                           |
 
 Contrast with future oracles (death certificates, government APIs, AI verification) which require **new trust assumptions** Keepra hasn't yet decided on.
 
@@ -104,6 +104,7 @@ Different DAOs (Sui Multisig, Move-based governance modules, custom DAOs) have d
 ```
 
 Each adapter:
+
 1. Takes a DAO-specific proof object as input
 2. Verifies the proof matches a passed proposal targeting this vault
 3. Calls `dao_release::set_released_internal`
@@ -112,7 +113,7 @@ This pattern means **Keepra doesn't need to ship its own DAO framework** for the
 
 ### 2.5 The MVP adapter: `keepra_simple_voting`
 
-For the hackathon demo, Keepra ships a minimal "SimpleVoting" Move module that any user can deploy in 30 seconds:
+For the demo, Keepra ships a minimal "SimpleVoting" Move module that any user can deploy in 30 seconds:
 
 ```move
 module keepra::simple_voting;
@@ -218,7 +219,7 @@ public entry fun execute_release(
 }
 ```
 
-### 2.6 Sui Multisig adapter (post-submission stretch)
+### 2.6 Sui Multisig adapter (post-MVP stretch)
 
 For users with a Sui-native Multisig wallet, the adapter would verify that a specific multisig threshold has signed an "approve release" message. This requires reading multisig signatures from the proposal transaction; deferred to v1.
 
@@ -237,12 +238,12 @@ When `DAOReleaseProposed` event fires, the indexer's DAO event relayer immediate
 
 ### 2.9 Business model angle
 
-| Customer | Pain | Keepra offering |
-|---|---|---|
-| Sui Foundation, Mysten Labs | Founder/admin succession | Encrypt admin keys; release on board multisig |
-| Protocol foundations (Aave, Uniswap, ...) | Treasury continuity if multisig signers vanish | Encrypt recovery procedures; release on community DAO vote |
-| DAO treasurers | Emergency unlock procedures | Same |
-| Web3 startups (Y Combinator–style) | Cap table succession; co-founder recovery | Encrypt continuity instructions; release on investor + co-founder multisig |
+| Customer                                  | Pain                                           | Keepra offering                                                            |
+| ----------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------- |
+| Sui Foundation, Mysten Labs               | Founder/admin succession                       | Encrypt admin keys; release on board multisig                              |
+| Protocol foundations (Aave, Uniswap, ...) | Treasury continuity if multisig signers vanish | Encrypt recovery procedures; release on community DAO vote                 |
+| DAO treasurers                            | Emergency unlock procedures                    | Same                                                                       |
+| Web3 startups (Y Combinator–style)        | Cap table succession; co-founder recovery      | Encrypt continuity instructions; release on investor + co-founder multisig |
 
 Each of these is a "Keepra Enterprise" deal — sales motion is high-touch but ACV is in the thousands of dollars/year per vault. See [Roadmap.md](./Roadmap.md) for monetization.
 
@@ -262,12 +263,12 @@ The user has flagged that **decentralization is the priority** for these oracles
 
 **Decentralized design candidates:**
 
-| Approach | Trust model | Decentralization | Complexity | When to consider |
-|---|---|---|---|---|
-| **A. m-of-n attestor committee** | Pool of registered attestors (lawyers, notaries); ≥ m must independently attest | n attestors collude attack: requires m of them | Medium | Post-MVP. Requires attestor onboarding (regulated). |
-| **B. TEE-attested government API check** | Nautilus TEE calls VitalChek; produces signed attestation; ≥ m TEEs must agree | Compromise requires breaking TEE remote attestation | High | v2. Requires TEE operator network. |
-| **C. ZK proof of public obituary** | Prove (in ZK) that a signed obituary appeared in a trusted news site's RSS feed | Trust collapses to: did a news site sign that obituary? | Very high | Research direction. |
-| **D. Public attestation period** | Anyone can submit a "death claim"; bonded; counter-claim period; resolves on-chain | Game-theoretic; requires economic stake design | Very high | Optimistic-oracle style; v2+. |
+| Approach                                 | Trust model                                                                        | Decentralization                                        | Complexity | When to consider                                    |
+| ---------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------- | --------------------------------------------------- |
+| **A. m-of-n attestor committee**         | Pool of registered attestors (lawyers, notaries); ≥ m must independently attest    | n attestors collude attack: requires m of them          | Medium     | Post-MVP. Requires attestor onboarding (regulated). |
+| **B. TEE-attested government API check** | Nautilus TEE calls VitalChek; produces signed attestation; ≥ m TEEs must agree     | Compromise requires breaking TEE remote attestation     | High       | v2. Requires TEE operator network.                  |
+| **C. ZK proof of public obituary**       | Prove (in ZK) that a signed obituary appeared in a trusted news site's RSS feed    | Trust collapses to: did a news site sign that obituary? | Very high  | Research direction.                                 |
+| **D. Public attestation period**         | Anyone can submit a "death claim"; bonded; counter-claim period; resolves on-chain | Game-theoretic; requires economic stake design          | Very high  | Optimistic-oracle style; v2+.                       |
 
 **Keepra's likely path (when built):** **Approach A** — m-of-n registered attestor committee — is the right starting point. The attestor set is on-chain and Keepra ships an adapter for it (the same adapter pattern as DAO release). Attestors are registered notaries/lawyers in different jurisdictions. Compromise of any individual attestor doesn't compromise the system; need m colluders.
 
@@ -281,11 +282,11 @@ The user has flagged that **decentralization is the priority** for these oracles
 
 **Decentralized design candidates:**
 
-| Approach | Trust model | Decentralization | Complexity |
-|---|---|---|---|
-| **A. Multiple independent inference providers** | k inference services each produce an attestation; ≥ m must agree | k-of-m collusion; same as attestor committee | Medium |
-| **B. TEE-attested inference** | Inference runs in attestable TEE; result signed by enclave | Trusts TEE attestation chain (Intel/AMD/AWS Nitro) | High |
-| **C. zkML proofs** | Prove model output in zero-knowledge | No trust in inference operator; trust in zkML circuit correctness | Very high; cutting-edge |
+| Approach                                        | Trust model                                                      | Decentralization                                                  | Complexity              |
+| ----------------------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------------- |
+| **A. Multiple independent inference providers** | k inference services each produce an attestation; ≥ m must agree | k-of-m collusion; same as attestor committee                      | Medium                  |
+| **B. TEE-attested inference**                   | Inference runs in attestable TEE; result signed by enclave       | Trusts TEE attestation chain (Intel/AMD/AWS Nitro)                | High                    |
+| **C. zkML proofs**                              | Prove model output in zero-knowledge                             | No trust in inference operator; trust in zkML circuit correctness | Very high; cutting-edge |
 
 **Keepra's likely path (when built):** Approach A (multi-provider consensus) for v2; Approach B (TEE inference) for v3 once Nautilus matures.
 
@@ -299,11 +300,11 @@ The user has flagged that **decentralization is the priority** for these oracles
 
 **Decentralized design candidates:**
 
-| Approach | Trust model |
-|---|---|
-| **A. TEE-wrapped API calls** | Nautilus TEE polls VitalChek with verifiable inputs/outputs; ≥ m TEEs must agree |
+| Approach                                  | Trust model                                                                                              |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **A. TEE-wrapped API calls**              | Nautilus TEE polls VitalChek with verifiable inputs/outputs; ≥ m TEEs must agree                         |
 | **B. Multi-jurisdictional API agreement** | Query VitalChek (US), General Register Office (UK), other national registries; release on any K agreeing |
-| **C. ZK proof of API response** | API signs response; circuit verifies signature → ZK proof on-chain |
+| **C. ZK proof of API response**           | API signs response; circuit verifies signature → ZK proof on-chain                                       |
 
 **Keepra's likely path (when built):** Approach A (TEE) is most practical; would integrate with Mysten's Nautilus when it ships to mainnet.
 
@@ -377,23 +378,23 @@ The user has flagged decentralization as the top priority for any oracle Keepra 
 - An oracle that requires off-chain trust we can't audit
 - An AI oracle with no consensus layer
 
-These constraints are stronger than typical hackathon trade-offs, but they preserve **Invariant I1**: the Keepra operator cannot decrypt any vault.
+These constraints are stronger than typical MVP trade-offs, but they preserve **Invariant I1**: the Keepra operator cannot decrypt any vault.
 
 ---
 
 ## 5. The Oracle Roadmap
 
-| Phase | Oracle | Status |
-|---|---|---|
-| **MVP** (Phase 5) | Inactivity + Guardian | ✅ On-chain only; no external oracle |
-| **MVP+** (pre-submission) | DAO Release (SimpleVoting adapter) | 🚧 In progress |
-| **v1** | DAO Release (Sui Multisig adapter) | ⏳ Planned |
-| **v1** | Time-lock (Clock-only, not an oracle) | ⏳ Planned |
-| **v2** | m-of-n Attestor Committee (Approach A from §3.1) | 🔬 Design phase |
-| **v2** | TEE-attested API checks (Nautilus) | 🔬 Design phase; waits for Nautilus mainnet |
-| **v3** | Multi-provider AI consensus | 🔬 Research |
-| **v3+** | News scraper federation | 🔬 Research |
-| **v4+** | zkML / ZK API response proofs | 🔬 Speculative |
+| Phase             | Oracle                                           | Status                                      |
+| ----------------- | ------------------------------------------------ | ------------------------------------------- |
+| **MVP** (Phase 5) | Inactivity + Guardian                            | ✅ On-chain only; no external oracle        |
+| **MVP+**          | DAO Release (SimpleVoting adapter)               | 🚧 In progress                              |
+| **v1**            | DAO Release (Sui Multisig adapter)               | ⏳ Planned                                  |
+| **v1**            | Time-lock (Clock-only, not an oracle)            | ⏳ Planned                                  |
+| **v2**            | m-of-n Attestor Committee (Approach A from §3.1) | 🔬 Design phase                             |
+| **v2**            | TEE-attested API checks (Nautilus)               | 🔬 Design phase; waits for Nautilus mainnet |
+| **v3**            | Multi-provider AI consensus                      | 🔬 Research                                 |
+| **v3+**           | News scraper federation                          | 🔬 Research                                 |
+| **v4+**           | zkML / ZK API response proofs                    | 🔬 Speculative                              |
 
 ---
 
@@ -403,7 +404,7 @@ Once Keepra has 2+ oracle types, we ship an SDK for third parties to build their
 
 ```ts
 // Hypothetical future SDK
-import { OracleAdapter } from "@keepra/oracle-sdk";
+import { OracleAdapter } from '@keepra/oracle-sdk';
 
 class MyCustomOracle implements OracleAdapter {
   verifyProof(req: DAOReleaseRequest, proof: MyProof): boolean {
@@ -418,14 +419,14 @@ This makes Keepra **extensible**. Any project can build a release-condition orac
 
 ## 7. Open Questions for the Team
 
-1. **DAO type for hackathon demo:** Should the demo use the SimpleVoting adapter, or hook into a real existing Sui DAO (e.g., a Mysten-operated test DAO)?
+1. **DAO type for the demo:** Should the demo use the SimpleVoting adapter, or hook into a real existing Sui DAO (e.g., a Mysten-operated test DAO)?
 2. **Attestor onboarding (v2):** Open registration vs. Keepra-curated list of vetted attestors?
 3. **Economic stake (v2):** Bond size and slashing conditions for attestors?
 4. **AI provider list (v3):** Which providers (OpenAI, Anthropic, Google) and which model versions?
 5. **TEE choice (v2/v3):** Nautilus (Sui-native) vs. AWS Nitro vs. Intel TDX?
 6. **Owner-initiated DAO revocation:** Should the owner be able to remove a DAO from the policy post-seal? (Currently: no, by Invariant I2.)
 
-These are deliberately deferred. The MVP+submission scope is **DAO Release Oracle (SimpleVoting adapter) only**.
+These are deliberately deferred. The MVP scope is **DAO Release Oracle (SimpleVoting adapter) only**.
 
 ---
 

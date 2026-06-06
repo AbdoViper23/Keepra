@@ -312,7 +312,7 @@ See [Roadmap.md](./Roadmap.md) for sequencing.
 
 ## 9. DAO Release Oracle
 
-> **This is Keepra's headline B2B feature for v1.** It turns DAO governance into a programmable recovery mechanism. The MVP design is built to ship inside the hackathon window.
+> **This is Keepra's headline B2B feature for v1.** It turns DAO governance into a programmable recovery mechanism. The design is built to ship inside the MVP window.
 
 ### 9.1 Use case
 
@@ -367,7 +367,7 @@ For MVP we ship **one adapter** — a vanilla "Keepra-DAO" reference module that
 
 ### 9.4 What the demo shows
 
-This is **the visual headline of the Sui Overflow pitch**. Three browser windows side-by-side: (1) founder seals vault, (2) DAO members vote on-chain, (3) board-multisig claims the moment the vote passes.
+This is **the visual headline of the product pitch**. Three browser windows side-by-side: (1) founder seals vault, (2) DAO members vote on-chain, (3) board-multisig claims the moment the vote passes.
 
 ### 9.5 Business model implications
 

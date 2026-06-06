@@ -9,11 +9,12 @@
 Keepra is a **Programmable Conditional Release** primitive built on Sui + Seal + Walrus. Users encrypt data into "Sealed Vaults" on Walrus; decryption is governed by Move-defined `seal_approve_release` policies on Sui. The platform mathematically cannot decrypt — only on-chain policies can release a vault.
 
 MVP release conditions (OR-composed):
+
 1. **Inactivity** (dead-man switch)
 2. **Guardian quorum** (m-of-n attestation)
 3. **DAO governance vote**
 
-Target: **Sui Overflow 2026 — Walrus Specialized Track ($70K).**
+Target: **A production-ready MVP on Sui + Seal + Walrus.**
 
 For deeper context read [README.md](./README.md), then [Architecture.md](./docs/Architecture.md).
 
@@ -21,7 +22,7 @@ For deeper context read [README.md](./README.md), then [Architecture.md](./docs/
 
 ## Your Job
 
-You are an AI coding agent helping the team build Keepra over a 6-week hackathon timeline. You work **phase by phase** per [Engineering-Plan.md](./docs/Engineering-Plan.md). Each phase is small, testable, and ends with a git commit when its acceptance criteria pass.
+You are an AI coding agent helping the team build Keepra over a phased, ~6-week MVP timeline. You work **phase by phase** per [Engineering-Plan.md](./docs/Engineering-Plan.md). Each phase is small, testable, and ends with a git commit when its acceptance criteria pass.
 
 You do not work on multiple phases at once. You do not add features outside the current phase. You finish what is asked, verify it works, commit, then ask for the next task.
 
@@ -39,6 +40,7 @@ You do not work on multiple phases at once. You do not add features outside the 
 If the user gives you a task that isn't in the Engineering Plan, ask before proceeding — it may be valid (a bug, a docs fix) but should be acknowledged as out-of-plan first.
 
 ---
+
 ## Required Claude Code Skills
 
 > The `.claude/` folder is **gitignored** (personal per-developer). Each team member must install the skills locally so Claude has the right context when working on this codebase.
@@ -53,17 +55,17 @@ In Claude Code, run:
 
 This installs the **sui-stack-dev** plugin which bundles every Sui-related skill we rely on:
 
-| Skill | Used for |
-|---|---|
-| `sui-stack-dev:sui-move-development` | Writing Move modules, structs, tests, abilities, transfer policies |
-| `sui-stack-dev:sui-typescript-sdk` | `@mysten/sui` SDK usage, PTBs, client setup |
-| `sui-stack-dev:sui-wallet-integration` | `@mysten/dapp-kit-react`, zkLogin, wallet adapters |
-| `sui-stack-dev:seal-encryption` | `@mysten/seal` — encrypt/decrypt flows, `seal_approve_*` |
-| `sui-stack-dev:walrus-storage` | `@mysten/walrus` — uploads, blob management |
-| `sui-stack-dev:init-dapp` | Scaffolding new Sui dApp projects |
-| `sui-stack-dev:test-move` | Move tests with filtering, coverage, gas profiling |
-| `sui-stack-dev:deploy-contract` | Interactive Move package deploys to testnet/mainnet |
-| `sui-stack-dev:sui-cli-usage` | `sui client` commands, keytool, network switching |
+| Skill                                  | Used for                                                           |
+| -------------------------------------- | ------------------------------------------------------------------ |
+| `sui-stack-dev:sui-move-development`   | Writing Move modules, structs, tests, abilities, transfer policies |
+| `sui-stack-dev:sui-typescript-sdk`     | `@mysten/sui` SDK usage, PTBs, client setup                        |
+| `sui-stack-dev:sui-wallet-integration` | `@mysten/dapp-kit-react`, zkLogin, wallet adapters                 |
+| `sui-stack-dev:seal-encryption`        | `@mysten/seal` — encrypt/decrypt flows, `seal_approve_*`           |
+| `sui-stack-dev:walrus-storage`         | `@mysten/walrus` — uploads, blob management                        |
+| `sui-stack-dev:init-dapp`              | Scaffolding new Sui dApp projects                                  |
+| `sui-stack-dev:test-move`              | Move tests with filtering, coverage, gas profiling                 |
+| `sui-stack-dev:deploy-contract`        | Interactive Move package deploys to testnet/mainnet                |
+| `sui-stack-dev:sui-cli-usage`          | `sui client` commands, keytool, network switching                  |
 
 > If a Move-specific code review skill is needed, also install `move-code-review` separately.
 
@@ -90,14 +92,14 @@ Every new feature follows this loop:
 
 When you need to know if something works, run it. Do not assume.
 
-| Question | Command (don't guess; run it) |
-|---|---|
+| Question                         | Command (don't guess; run it)      |
+| -------------------------------- | ---------------------------------- |
 | "Does the Move package compile?" | `cd move/keepra && sui move build` |
-| "Do the Move tests pass?" | `cd move/keepra && sui move test` |
-| "Does the frontend build?" | `cd apps/web && pnpm build` |
-| "Do the frontend tests pass?" | `cd apps/web && pnpm test` |
-| "Does TypeScript type-check?" | `pnpm typecheck` (from repo root) |
-| "Does the linter pass?" | `pnpm lint` (from repo root) |
+| "Do the Move tests pass?"        | `cd move/keepra && sui move test`  |
+| "Does the frontend build?"       | `cd apps/web && pnpm build`        |
+| "Do the frontend tests pass?"    | `cd apps/web && pnpm test`         |
+| "Does TypeScript type-check?"    | `pnpm typecheck` (from repo root)  |
+| "Does the linter pass?"          | `pnpm lint` (from repo root)       |
 
 If the user asks "did the tests pass?" — run them and paste the output. Do not say "they should pass."
 
@@ -111,6 +113,7 @@ git commit -m "phase-N: <short description>"
 ```
 
 Use the format `phase-N: <description>`. Examples:
+
 - `phase-1: implement vault.move create_and_seal`
 - `phase-4: integrate seal encrypt/decrypt CLI roundtrip`
 - `phase-8: build beneficiary claim page`
@@ -138,14 +141,14 @@ These are not preferences. They are invariants for this project.
 
 ### Security Invariants (from [README.md §6](./README.md#6-hard-invariants))
 
-| # | Rule | What it means in code |
-|---|---|---|
-| **I1** | Operator cannot decrypt | No Keepra-operated Seal key server. No DEK ever sent to backend. No plaintext logged. |
-| **I2** | Sealed vaults are immutable | `vault::create_and_seal` MUST call `transfer::public_freeze_object(vault)` before returning. No mutable accessor on `Vault` fields. |
-| **I3** | Decryption requires `seal_approve_release` success | All release conditions live in this one Move function. No second permissive `seal_approve_*` function. |
-| **I4** | Only edit is revoke | No mutator functions on `Vault`. Only `revoke_vault` on `HeartbeatLog` can change state in a destructive way. |
-| **I5** | Beneficiary pays zero gas | All beneficiary-facing PTBs go through Enoki sponsorship. Never make the beneficiary hold SUI. |
-| **I6** | No raw seed phrases by default | Wizard detects BIP-39 patterns and warns. (Warning + User Choice in MVP.) |
+| #      | Rule                                               | What it means in code                                                                                                               |
+| ------ | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **I1** | Operator cannot decrypt                            | No Keepra-operated Seal key server. No DEK ever sent to backend. No plaintext logged.                                               |
+| **I2** | Sealed vaults are immutable                        | `vault::create_and_seal` MUST call `transfer::public_freeze_object(vault)` before returning. No mutable accessor on `Vault` fields. |
+| **I3** | Decryption requires `seal_approve_release` success | All release conditions live in this one Move function. No second permissive `seal_approve_*` function.                              |
+| **I4** | Only edit is revoke                                | No mutator functions on `Vault`. Only `revoke_vault` on `HeartbeatLog` can change state in a destructive way.                       |
+| **I5** | Beneficiary pays zero gas                          | All beneficiary-facing PTBs go through Enoki sponsorship. Never make the beneficiary hold SUI.                                      |
+| **I6** | No raw seed phrases by default                     | Wizard detects BIP-39 patterns and warns. (Warning + User Choice in MVP.)                                                           |
 
 If a code change you're about to make would break any of these invariants, **stop and ask the user**. Don't "find a clever way" around them — they're load-bearing.
 
@@ -186,16 +189,16 @@ When in doubt about how a change interacts with the system, re-read [Architectur
 
 When you start a phase, the docs to read depend on what you're building:
 
-| Phase task | Read these (in order) |
-|---|---|
-| **Any Move work** | [Contracts.md](./docs/Contracts.md), then drive scaffolding through the installed Sui-Move skill |
-| **Seal integration** | [Architecture.md §5](./docs/Architecture.md#5-seal-flow-the-core-primitive), [Flows.md Flow 6 & 7](./docs/Flows.md#flow-6--beneficiary-claim-the-headline-flow), Seal docs at https://seal-docs.wal.app/ |
-| **Walrus integration** | [Architecture.md §6](./docs/Architecture.md#6-walrus-integration), [Flows.md Flow 8](./docs/Flows.md#flow-8--walrus-retrieval-with-fallback-aggregators), Walrus docs at https://docs.wal.app/ |
-| **zkLogin / Enoki** | [Architecture.md §7](./docs/Architecture.md#7-zklogin--enoki-flow), [Frontend.md §7](./docs/Frontend.md#7-zklogin-integration), Enoki docs at https://docs.enoki.mystenlabs.com/ |
-| **Frontend UI** | [Frontend.md](./docs/Frontend.md), then the specific flow in [Flows.md](./docs/Flows.md) |
-| **Backend service** | [Backend.md](./docs/Backend.md), then [Architecture.md §3](./docs/Architecture.md#3-top-level-system-diagram) |
-| **DAO release** | [Oracles.md §2](./docs/Oracles.md#2-the-dao-release-oracle-mvp-built-before-submission), [Flows.md Flow 9](./docs/Flows.md#flow-9--dao-release) |
-| **Security review** | [Security.md](./docs/Security.md) |
+| Phase task             | Read these (in order)                                                                                                                                                                                    |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Any Move work**      | [Contracts.md](./docs/Contracts.md), then drive scaffolding through the installed Sui-Move skill                                                                                                         |
+| **Seal integration**   | [Architecture.md §5](./docs/Architecture.md#5-seal-flow-the-core-primitive), [Flows.md Flow 6 & 7](./docs/Flows.md#flow-6--beneficiary-claim-the-headline-flow), Seal docs at https://seal-docs.wal.app/ |
+| **Walrus integration** | [Architecture.md §6](./docs/Architecture.md#6-walrus-integration), [Flows.md Flow 8](./docs/Flows.md#flow-8--walrus-retrieval-with-fallback-aggregators), Walrus docs at https://docs.wal.app/           |
+| **zkLogin / Enoki**    | [Architecture.md §7](./docs/Architecture.md#7-zklogin--enoki-flow), [Frontend.md §7](./docs/Frontend.md#7-zklogin-integration), Enoki docs at https://docs.enoki.mystenlabs.com/                         |
+| **Frontend UI**        | [Frontend.md](./docs/Frontend.md), then the specific flow in [Flows.md](./docs/Flows.md)                                                                                                                 |
+| **Backend service**    | [Backend.md](./docs/Backend.md), then [Architecture.md §3](./docs/Architecture.md#3-top-level-system-diagram)                                                                                            |
+| **DAO release**        | [Oracles.md §2](./docs/Oracles.md#2-the-dao-release-oracle-mvp), [Flows.md Flow 9](./docs/Flows.md#flow-9--dao-release)                                                                                  |
+| **Security review**    | [Security.md](./docs/Security.md)                                                                                                                                                                        |
 
 You don't need to re-read all the docs every time. Skim what's relevant; ignore what isn't.
 
@@ -203,23 +206,23 @@ You don't need to re-read all the docs every time. Skim what's relevant; ignore 
 
 ## Project Glossary (Just the Critical Terms)
 
-| Term | Definition |
-|---|---|
-| **Vault** | Frozen on-chain Sui object representing one sealed payload. Immutable after creation. |
-| **HeartbeatLog** | Mutable shared object tracking `last_heartbeat_ms`, attestations, `revoked`, `dao_released`. |
-| **GuardianCap** | Owned object granting one guardian the right to call `attest()`. |
-| **Seal** | Mysten's threshold IBE library. Provides `SealClient.encrypt()` and `SealClient.decrypt()`. |
-| **Walrus** | Decentralized blob storage. Provides `Blob` Sui objects whose lifetime is governed by Move. |
-| **Enoki** | Mysten's zkLogin + sponsored-tx service. Lets beneficiaries sign in with Google. |
-| **PTB** | Programmable Transaction Block. Sui's atomic multi-call format. |
-| **`seal_approve_release`** | The ONE Move function Seal key servers dry-run to check if decryption is permitted. |
-| **DEK** | Data Encryption Key. The AES-GCM key Seal protects via IBE-KEM. |
-| **`backupKey`** | Optional symmetric key returned at encrypt time, allowing offline decryption. Opt-in only. |
-| **Sealed** | State from creation until revocation. |
-| **Triggered** | State after a release condition is satisfied. |
-| **Revoked** | Owner-initiated permanent destruction of access. |
-| **Heartbeat** | Manual "I'm alive" transaction (MVP). Updates `last_heartbeat_ms`. |
-| **Inactivity** | Time since last heartbeat. If > `inactivity_seconds`, release condition is satisfied. |
+| Term                       | Definition                                                                                   |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| **Vault**                  | Frozen on-chain Sui object representing one sealed payload. Immutable after creation.        |
+| **HeartbeatLog**           | Mutable shared object tracking `last_heartbeat_ms`, attestations, `revoked`, `dao_released`. |
+| **GuardianCap**            | Owned object granting one guardian the right to call `attest()`.                             |
+| **Seal**                   | Mysten's threshold IBE library. Provides `SealClient.encrypt()` and `SealClient.decrypt()`.  |
+| **Walrus**                 | Decentralized blob storage. Provides `Blob` Sui objects whose lifetime is governed by Move.  |
+| **Enoki**                  | Mysten's zkLogin + sponsored-tx service. Lets beneficiaries sign in with Google.             |
+| **PTB**                    | Programmable Transaction Block. Sui's atomic multi-call format.                              |
+| **`seal_approve_release`** | The ONE Move function Seal key servers dry-run to check if decryption is permitted.          |
+| **DEK**                    | Data Encryption Key. The AES-GCM key Seal protects via IBE-KEM.                              |
+| **`backupKey`**            | Optional symmetric key returned at encrypt time, allowing offline decryption. Opt-in only.   |
+| **Sealed**                 | State from creation until revocation.                                                        |
+| **Triggered**              | State after a release condition is satisfied.                                                |
+| **Revoked**                | Owner-initiated permanent destruction of access.                                             |
+| **Heartbeat**              | Manual "I'm alive" transaction (MVP). Updates `last_heartbeat_ms`.                           |
+| **Inactivity**             | Time since last heartbeat. If > `inactivity_seconds`, release condition is satisfied.        |
 
 Full glossary in [Architecture.md §14](./docs/Architecture.md#14-glossary).
 
@@ -281,7 +284,8 @@ That's a useful message. "It's not working" is not.
 ## When the User Pushes Back
 
 If the user disagrees with your approach, **listen and adjust**. They have more context than you about:
-- Hackathon priorities and what judges care about
+
+- Product priorities and what users care about
 - The team's existing knowledge
 - Past architectural decisions made before this session
 
@@ -310,11 +314,13 @@ When the user says "stop" or "let's pick this up later":
 When the user is about to give you a large task, suggest using Claude Code's Plan Mode (Shift+Tab twice). You'll plan the work without writing code, get user buy-in on the plan, then execute.
 
 Plan mode is best for:
+
 - Starting a new phase
 - Refactors touching multiple files
 - Anything where "should I do X or Y?" is unclear
 
 Plan mode is not needed for:
+
 - Small bug fixes
 - Single-file edits
 - Tasks the user has explicitly scoped
@@ -323,25 +329,25 @@ Plan mode is not needed for:
 
 ## Doc Map (Quick Reference)
 
-| Doc | When to read |
-|---|---|
-| [README.md](./README.md) | First time on the project; need overall pitch |
-| **CLAUDE.md** (this file) | Every session start |
-| [Seal-Config.md](./Seal-Config.md) | Anything touching Seal endpoints / IDs — canonical source |
-| [Engineering-Plan.md](./docs/Engineering-Plan.md) | Every session start; identifies current phase |
-| [Repo-Structure.md](./docs/Repo-Structure.md) | When creating new files; need to know where they go |
-| [Architecture.md](./docs/Architecture.md) | Need system-level understanding |
-| [Flows.md](./docs/Flows.md) | Working on a specific user flow |
-| [Contracts.md](./docs/Contracts.md) | Move-specific design questions |
-| [Frontend.md](./docs/Frontend.md) | Frontend work |
-| [Backend.md](./docs/Backend.md) | Backend work |
-| [Oracles.md](./docs/Oracles.md) | DAO release or future oracle questions |
-| [Security.md](./docs/Security.md) | Threat-model questions; when touching crypto |
-| [TechStack.md](./docs/TechStack.md) | SDK questions; pinning versions; endpoint URLs |
-| [Roadmap.md](./docs/Roadmap.md) | "Is this MVP or v1?" |
-| `internal/Hackathon.md` (gitignored) | Demo / submission questions — team-private |
-| `internal/METRICS.md` (gitignored) | KPIs per phase; what we measure — team-private |
-| `internal/COMPETITION.md` (gitignored) | Competitive positioning; pitch battle cards — team-private |
+| Doc                                               | When to read                                               |
+| ------------------------------------------------- | ---------------------------------------------------------- |
+| [README.md](./README.md)                          | First time on the project; need overall pitch              |
+| **CLAUDE.md** (this file)                         | Every session start                                        |
+| [Seal-Config.md](./Seal-Config.md)                | Anything touching Seal endpoints / IDs — canonical source  |
+| [Engineering-Plan.md](./docs/Engineering-Plan.md) | Every session start; identifies current phase              |
+| [Repo-Structure.md](./docs/Repo-Structure.md)     | When creating new files; need to know where they go        |
+| [Architecture.md](./docs/Architecture.md)         | Need system-level understanding                            |
+| [Flows.md](./docs/Flows.md)                       | Working on a specific user flow                            |
+| [Contracts.md](./docs/Contracts.md)               | Move-specific design questions                             |
+| [Frontend.md](./docs/Frontend.md)                 | Frontend work                                              |
+| [Backend.md](./docs/Backend.md)                   | Backend work                                               |
+| [Oracles.md](./docs/Oracles.md)                   | DAO release or future oracle questions                     |
+| [Security.md](./docs/Security.md)                 | Threat-model questions; when touching crypto               |
+| [TechStack.md](./docs/TechStack.md)               | SDK questions; pinning versions; endpoint URLs             |
+| [Roadmap.md](./docs/Roadmap.md)                   | "Is this MVP or v1?"                                       |
+| `internal/` (gitignored)                          | Team-private planning notes                                |
+| `internal/METRICS.md` (gitignored)                | KPIs per phase; what we measure — team-private             |
+| `internal/COMPETITION.md` (gitignored)            | Competitive positioning; pitch battle cards — team-private |
 
 ---
 

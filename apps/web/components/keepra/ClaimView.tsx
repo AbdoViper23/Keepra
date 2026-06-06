@@ -244,6 +244,8 @@ function FileItem({ file }: { file: DecodedPayload['files'][number] }) {
   return (
     <li className="border border-border bg-card overflow-hidden">
       {isImage && (
+        // Decrypted bytes are a local blob: object URL — next/image can't optimize it.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={url}
           alt={file.entry.name}

@@ -73,12 +73,12 @@ sequenceDiagram
 
 ### Error cases
 
-| Error | Recovery |
-|-------|----------|
-| Walrus PUT timeout | Retry against fallback publisher; UI shows progress |
-| PTB fails after upload succeeds | UI shows "orphaned blob" warning; offers retry; blob auto-expires if abandoned |
-| Seal encryption returns no `backupKey` when user opted in | Block the seal step; user must re-confirm |
-| Frozen Vault assertion not satisfied (test) | Compile error or test failure — caught in CI |
+| Error                                                     | Recovery                                                                       |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Walrus PUT timeout                                        | Retry against fallback publisher; UI shows progress                            |
+| PTB fails after upload succeeds                           | UI shows "orphaned blob" warning; offers retry; blob auto-expires if abandoned |
+| Seal encryption returns no `backupKey` when user opted in | Block the seal step; user must re-confirm                                      |
+| Frozen Vault assertion not satisfied (test)               | Compile error or test failure — caught in CI                                   |
 
 ### Pseudo-code (frontend, abbreviated)
 
@@ -87,23 +87,24 @@ sequenceDiagram
 const { encryptedObject, backupKey } = await sealClient.encrypt({
   threshold: 2,
   packageId: KEEPRA_PKG,
-  id: deriveVaultId(),         // pre-allocated UID bytes
+  id: deriveVaultId(), // pre-allocated UID bytes
   data: payloadBytes,
 });
 
 // 2. Upload
 const { newlyCreated } = await fetch(`${PUBLISHER}/v1/blobs?epochs=${EPOCHS}`, {
-  method: "PUT", body: encryptedObject,
-}).then(r => r.json());
+  method: 'PUT',
+  body: encryptedObject,
+}).then((r) => r.json());
 const blobId = newlyCreated.blobObject.blobId;
 
 // 3. Seal PTB
 const tx = new Transaction();
 const [vault, log, caps] = tx.moveCall({
   target: `${KEEPRA_PKG}::vault::create_and_seal`,
-  arguments: [tx.pure(blobId), /* ... policy args ... */],
+  arguments: [tx.pure(blobId) /* ... policy args ... */],
 });
-tx.moveCall({ target: "0x2::transfer::public_freeze_object", arguments: [vault] });
+tx.moveCall({ target: '0x2::transfer::public_freeze_object', arguments: [vault] });
 // + transfer guardian caps
 await signAndExecute(tx);
 ```
@@ -139,7 +140,7 @@ sequenceDiagram
 
 ### Future: automatic liveness
 
-In v3 (see [Roadmap.md § v3 Automatic Liveness](./Roadmap.md#v3-automatic-liveness)), the indexer treats *any* tx signed by the owner's address as an implicit heartbeat — no manual click needed. The owner can also opt into multi-chain liveness (Ethereum / Solana / Bitcoin) via signed-address proofs.
+In v3 (see [Roadmap.md § v3 Automatic Liveness](./Roadmap.md#v3-automatic-liveness)), the indexer treats _any_ tx signed by the owner's address as an implicit heartbeat — no manual click needed. The owner can also opt into multi-chain liveness (Ethereum / Solana / Bitcoin) via signed-address proofs.
 
 ---
 
@@ -190,7 +191,7 @@ sequenceDiagram
 
 **Goal**: When the owner has missed heartbeat for `inactivity_seconds`, beneficiary is notified that they can claim.
 
-> **Critical**: this flow doesn't *unlock* decryption — that's already implicit the moment `clock.timestamp_ms() >= last_heartbeat_ms + inactivity_seconds * 1000`. This flow just *notifies* the beneficiary.
+> **Critical**: this flow doesn't _unlock_ decryption — that's already implicit the moment `clock.timestamp_ms() >= last_heartbeat_ms + inactivity_seconds * 1000`. This flow just _notifies_ the beneficiary.
 
 ```mermaid
 sequenceDiagram
@@ -280,7 +281,7 @@ For MVP we ship one adapter — the **Keepra reference DAO** (also used in the d
 
 ### Demo positioning
 
-The visual headline of the Sui Overflow pitch is built around this flow — three browser windows: founder, DAO voters, board claimant.
+The visual headline of the product pitch is built around this flow — three browser windows: founder, DAO voters, board claimant.
 
 ---
 
@@ -349,12 +350,12 @@ sequenceDiagram
 
 ### Error cases
 
-| Error | What the user sees |
-|-------|---------------------|
-| `Access Denied` from key server | "Authorization failed. The vault state may have changed. Please refresh and try again." |
-| `InvalidParameter` | Server's full node hasn't indexed the latest state. Auto-retry with backoff. |
+| Error                                      | What the user sees                                                                                                             |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `Access Denied` from key server            | "Authorization failed. The vault state may have changed. Please refresh and try again."                                        |
+| `InvalidParameter`                         | Server's full node hasn't indexed the latest state. Auto-retry with backoff.                                                   |
 | Threshold not reachable (key servers down) | "Some key servers are temporarily unreachable. Please try again in a moment, or use your backup recovery key if you have one." |
-| Walrus aggregator down | Try fallback aggregators in order; surface error only if all fail. |
+| Walrus aggregator down                     | Try fallback aggregators in order; surface error only if all fail.                                                             |
 
 ---
 
@@ -401,7 +402,7 @@ sequenceDiagram
 
 ### Why this is secure
 
-- **Each key server independently checks the policy** by dry-running the PTB against its own full node. A single compromised key server cannot fake a policy success because it can only sign with *its own* share — and ≥t shares are required.
+- **Each key server independently checks the policy** by dry-running the PTB against its own full node. A single compromised key server cannot fake a policy success because it can only sign with _its own_ share — and ≥t shares are required.
 - **No key server ever sees plaintext** — the ciphertext is fetched directly by the client from Walrus and decrypted client-side.
 - **The session key bounds key-server interaction to 10 minutes**. Even a compromised session signature can only request decryptions for 10 minutes within the package scope.
 

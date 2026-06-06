@@ -6,14 +6,14 @@
 
 ## 1. Services Overview
 
-| Service | Purpose | Process | Cadence | Cryptographic access |
-|---|---|---|---|---|
-| `api-gateway` | REST + GraphQL for frontend | Fastify | request-driven | None |
-| `indexer` | Mirrors Sui events to Postgres | Node + Sui SDK | 5s polling / event subscription | None |
-| `notifier` | Sends emails (heartbeat reminders, beneficiary alerts, guardian invites) | Node | request-driven + cron | None |
-| `trigger-daemon` | Polls heartbeat windows; flips convenience flags | Node + node-cron | 60s tick | None |
-| `enoki-sponsor-proxy` | Wraps user PTBs with Enoki sponsor signatures | Fastify (inside api-gateway) | request-driven | Enoki API key only |
-| `dao-event-relayer` | Watches DAO module events; forwards to indexer + notifier | Node | event subscription | None |
+| Service               | Purpose                                                                  | Process                      | Cadence                         | Cryptographic access |
+| --------------------- | ------------------------------------------------------------------------ | ---------------------------- | ------------------------------- | -------------------- |
+| `api-gateway`         | REST + GraphQL for frontend                                              | Fastify                      | request-driven                  | None                 |
+| `indexer`             | Mirrors Sui events to Postgres                                           | Node + Sui SDK               | 5s polling / event subscription | None                 |
+| `notifier`            | Sends emails (heartbeat reminders, beneficiary alerts, guardian invites) | Node                         | request-driven + cron           | None                 |
+| `trigger-daemon`      | Polls heartbeat windows; flips convenience flags                         | Node + node-cron             | 60s tick                        | None                 |
+| `enoki-sponsor-proxy` | Wraps user PTBs with Enoki sponsor signatures                            | Fastify (inside api-gateway) | request-driven                  | Enoki API key only   |
+| `dao-event-relayer`   | Watches DAO module events; forwards to indexer + notifier                | Node                         | event subscription              | None                 |
 
 All services are stateless except for read/write access to a shared Postgres instance.
 
@@ -65,16 +65,16 @@ All services share `apps/shared`. Built via pnpm workspaces.
 
 ### Endpoints
 
-| Method | Path | Purpose | Auth |
-|---|---|---|---|
-| `GET` | `/health` | Liveness probe | None |
-| `GET` | `/vaults/:id` | Vault summary + state | Public |
-| `GET` | `/vaults?owner=:addr` | List owner's vaults | Token (owner address verified via signed message) |
-| `GET` | `/claim/:vaultId/preview` | Show pre-claim info (without decrypt) | Public |
-| `POST` | `/notify/guardian-invite` | Trigger guardian onboarding email | Internal (called from frontend after seal) |
-| `POST` | `/notify/heartbeat-reminder` | (Cron-triggered, internal) | Internal |
-| `POST` | `/sponsor` | Wrap a PTB with Enoki sponsor signature | Public (user-bound) |
-| `POST` | `/sponsor/execute` | Execute a sponsored, user-signed PTB | Public |
+| Method | Path                         | Purpose                                 | Auth                                              |
+| ------ | ---------------------------- | --------------------------------------- | ------------------------------------------------- |
+| `GET`  | `/health`                    | Liveness probe                          | None                                              |
+| `GET`  | `/vaults/:id`                | Vault summary + state                   | Public                                            |
+| `GET`  | `/vaults?owner=:addr`        | List owner's vaults                     | Token (owner address verified via signed message) |
+| `GET`  | `/claim/:vaultId/preview`    | Show pre-claim info (without decrypt)   | Public                                            |
+| `POST` | `/notify/guardian-invite`    | Trigger guardian onboarding email       | Internal (called from frontend after seal)        |
+| `POST` | `/notify/heartbeat-reminder` | (Cron-triggered, internal)              | Internal                                          |
+| `POST` | `/sponsor`                   | Wrap a PTB with Enoki sponsor signature | Public (user-bound)                               |
+| `POST` | `/sponsor/execute`           | Execute a sponsored, user-signed PTB    | Public                                            |
 
 ### Why a backend at all (if the frontend talks to Sui directly)?
 
@@ -256,25 +256,25 @@ ON notification_outbox(scheduled_for) WHERE status = 'pending';
 
 ```ts
 // Pseudo-code
-import { SuiClient } from "@mysten/sui/client";
+import { SuiClient } from '@mysten/sui/client';
 
 const client = new SuiClient({ url: SUI_RPC_URL });
 
 async function pollLoop() {
-  let cursor = await getCursor("vault");
+  let cursor = await getCursor('vault');
   while (running) {
     const page = await client.queryEvents({
-      query: { MoveEventModule: { package: KEEPRA_PKG, module: "events" } },
+      query: { MoveEventModule: { package: KEEPRA_PKG, module: 'events' } },
       cursor,
       limit: 50,
-      order: "ascending",
+      order: 'ascending',
     });
 
     for (const ev of page.data) {
-      await handleEvent(ev);  // idempotent UPSERT
+      await handleEvent(ev); // idempotent UPSERT
       cursor = { txDigest: ev.id.txDigest, eventSeq: ev.id.eventSeq };
     }
-    await setCursor("vault", cursor);
+    await setCursor('vault', cursor);
 
     if (!page.hasNextPage) await sleep(5000);
   }
@@ -306,11 +306,14 @@ async function tick() {
   `);
 
   for (const v of candidates) {
-    const log = await suiClient.getObject({ id: v.heartbeat_log_id, options: { showContent: true } });
-    const live = parseHeartbeatLog(log);  // current chain state
+    const log = await suiClient.getObject({
+      id: v.heartbeat_log_id,
+      options: { showContent: true },
+    });
+    const live = parseHeartbeatLog(log); // current chain state
 
     if (live.revoked) {
-      await db.update("vault_index", v.vault_id, { revoked: true });
+      await db.update('vault_index', v.vault_id, { revoked: true });
       continue;
     }
 
@@ -320,11 +323,11 @@ async function tick() {
     const daoReleased = live.dao_released;
 
     if (inactivityElapsed || quorumReached || daoReleased) {
-      const reason = daoReleased ? 3 : (quorumReached ? 2 : 1);
+      const reason = daoReleased ? 3 : quorumReached ? 2 : 1;
       await sendTransaction(markTriggered(v.heartbeat_log_id, reason));
-      await db.update("vault_index", v.vault_id, { triggered: true, trigger_reason: reason });
+      await db.update('vault_index', v.vault_id, { triggered: true, trigger_reason: reason });
       await enqueueNotification({
-        kind: "trigger-alert",
+        kind: 'trigger-alert',
         vault_id: v.vault_id,
       });
     }
@@ -336,22 +339,22 @@ async function tick() {
 
 The daemon flips a convenience flag (`triggered=true` in Postgres + on-chain via `mark_triggered`). **The actual decryption check is live inside `seal_approve_release`**, which re-evaluates inactivity, quorum, and DAO release status against current chain state. Even if the daemon is compromised:
 
-| Compromise scenario | Consequence |
-|---|---|
-| Daemon spams `mark_triggered(reason=1)` | Cosmetic only — beneficiary still cannot decrypt unless conditions actually pass at `seal_approve_release` dry-run |
-| Daemon sends fraudulent notification emails | Beneficiary clicks claim link → seal_approve fails → "not yet unlocked" |
-| Daemon withheld notifications | Beneficiary still discovers the vault via direct portal / email reminder schedule |
+| Compromise scenario                         | Consequence                                                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Daemon spams `mark_triggered(reason=1)`     | Cosmetic only — beneficiary still cannot decrypt unless conditions actually pass at `seal_approve_release` dry-run |
+| Daemon sends fraudulent notification emails | Beneficiary clicks claim link → seal_approve fails → "not yet unlocked"                                            |
+| Daemon withheld notifications               | Beneficiary still discovers the vault via direct portal / email reminder schedule                                  |
 
 ### Reminder cadences
 
 The daemon also sends owner reminders ahead of inactivity:
 
-| Time before due | Reminder |
-|---|---|
-| 7 days | "Your vault X needs a heartbeat in 7 days" |
-| 1 day | "Final reminder: vault X heartbeat due tomorrow" |
-| At due | "Vault X is now in grace period (2 days)" |
-| End of grace | (Vault triggers; beneficiary notified) |
+| Time before due | Reminder                                         |
+| --------------- | ------------------------------------------------ |
+| 7 days          | "Your vault X needs a heartbeat in 7 days"       |
+| 1 day           | "Final reminder: vault X heartbeat due tomorrow" |
+| At due          | "Vault X is now in grace period (2 days)"        |
+| End of grace    | (Vault triggers; beneficiary notified)           |
 
 ---
 
@@ -381,15 +384,15 @@ async function dispatch() {
   for (const row of rows) {
     try {
       await sesClient.send(renderTemplate(row.kind, row.payload));
-      await db.update("notification_outbox", row.id, { status: "sent" });
+      await db.update('notification_outbox', row.id, { status: 'sent' });
     } catch (e) {
-      await db.update("notification_outbox", row.id, {
+      await db.update('notification_outbox', row.id, {
         attempts: row.attempts + 1,
         last_error: String(e),
         scheduled_for: new Date(Date.now() + retryBackoff(row.attempts)),
       });
       if (row.attempts > 5) {
-        await db.update("notification_outbox", row.id, { status: "failed" });
+        await db.update('notification_outbox', row.id, { status: 'failed' });
       }
     }
   }
@@ -398,14 +401,14 @@ async function dispatch() {
 
 ### Email templates
 
-| Kind | Template subject | Trigger |
-|---|---|---|
-| `guardian-invite` | "You're a guardian for [Owner]'s vault" | At vault seal |
-| `heartbeat-reminder-7d` | "Your vault needs a heartbeat in 7 days" | Cron, 7d before due |
-| `heartbeat-reminder-1d` | "Final reminder: heartbeat due tomorrow" | Cron, 1d before due |
-| `trigger-alert-beneficiary` | "A Keepra vault is now available for you" | When `triggered = true` |
-| `trigger-alert-owner` | "Your vault X was triggered" | Same event (informational, in case of false-positive) |
-| `dao-proposal-vault` | "DAO X has proposed releasing your vault" | DAOReleaseProposed event |
+| Kind                        | Template subject                          | Trigger                                               |
+| --------------------------- | ----------------------------------------- | ----------------------------------------------------- |
+| `guardian-invite`           | "You're a guardian for [Owner]'s vault"   | At vault seal                                         |
+| `heartbeat-reminder-7d`     | "Your vault needs a heartbeat in 7 days"  | Cron, 7d before due                                   |
+| `heartbeat-reminder-1d`     | "Final reminder: heartbeat due tomorrow"  | Cron, 1d before due                                   |
+| `trigger-alert-beneficiary` | "A Keepra vault is now available for you" | When `triggered = true`                               |
+| `trigger-alert-owner`       | "Your vault X was triggered"              | Same event (informational, in case of false-positive) |
+| `dao-proposal-vault`        | "DAO X has proposed releasing your vault" | DAOReleaseProposed event                              |
 
 All templates are versioned in code; rendering uses Handlebars or MJML.
 
@@ -426,9 +429,9 @@ Specialized indexer subscriber that watches DAO release events.
 
 ### Subscriptions
 
-| Event | Action |
-|---|---|
-| `DAOReleaseProposed` | Insert into `dao_proposals`; notify vault owner ("DAO X proposed releasing your vault") |
+| Event                | Action                                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `DAOReleaseProposed` | Insert into `dao_proposals`; notify vault owner ("DAO X proposed releasing your vault")                     |
 | `DAOReleaseApproved` | Update `dao_proposals.executed = true`; update `vault_index.dao_released = true`; enqueue beneficiary alert |
 
 The relayer is logically part of the indexer service — it lives in `apps/indexer/src/subscribers/dao.ts`.
@@ -439,13 +442,13 @@ Different DAO frameworks have different event shapes. The relayer maintains a sm
 
 ```ts
 const decoders: Record<string, EventDecoder> = {
-  "keepra_simple_voting": decodeSimpleVotingEvent,
-  "sui_multisig":          decodeMultisigEvent,
+  keepra_simple_voting: decodeSimpleVotingEvent,
+  sui_multisig: decodeMultisigEvent,
   // future: governance frameworks
 };
 ```
 
-For the MVP+submission, we ship the `keepra_simple_voting` adapter only. See [Oracles.md](./Oracles.md) for the full design.
+For the MVP, we ship the `keepra_simple_voting` adapter only. See [Oracles.md](./Oracles.md) for the full design.
 
 ---
 
@@ -459,6 +462,7 @@ For the MVP, the browser talks directly to a public Walrus publisher. For higher
 ```
 
 Benefits:
+
 - Subsidize WAL token costs (Keepra pays, user doesn't see WAL)
 - Reduce browser-side network complexity (one POST vs 2,200 storage-node connections)
 - Centralized retry and observability
@@ -491,27 +495,27 @@ The trigger daemon needs to call `mark_triggered`. It uses a dedicated **operato
 
 ## 10. Deployment
 
-### MVP (hackathon)
+### MVP
 
-| Service | Hosting | Cost |
-|---|---|---|
-| `api-gateway` | Railway or Fly.io | Free tier |
-| `indexer` | Railway | Free tier |
-| `trigger-daemon` | Railway cron | Free tier |
-| `notifier` | Inside api-gateway worker | Free tier |
-| Postgres | Neon or Supabase | Free tier |
-| Frontend | Vercel | Free tier |
+| Service          | Hosting                   | Cost      |
+| ---------------- | ------------------------- | --------- |
+| `api-gateway`    | Railway or Fly.io         | Free tier |
+| `indexer`        | Railway                   | Free tier |
+| `trigger-daemon` | Railway cron              | Free tier |
+| `notifier`       | Inside api-gateway worker | Free tier |
+| Postgres         | Neon or Supabase          | Free tier |
+| Frontend         | Vercel                    | Free tier |
 
 ### Production v1+
 
-| Service | Hosting | Notes |
-|---|---|---|
-| `api-gateway` | AWS Fargate or Fly.io with autoscaling | Sub-second p99 |
-| `indexer` | Fargate (1 instance) | Sticky single-instance to maintain cursor |
-| `trigger-daemon` | Fargate (1 instance) | Same reasoning |
-| `notifier` | Fargate with multiple workers | Outbox-coordinated, can scale |
-| Postgres | RDS or Crunchbridge | Daily backups |
-| Frontend | Vercel + Walrus Sites mirror | Censorship-resistant frontend |
+| Service          | Hosting                                | Notes                                     |
+| ---------------- | -------------------------------------- | ----------------------------------------- |
+| `api-gateway`    | AWS Fargate or Fly.io with autoscaling | Sub-second p99                            |
+| `indexer`        | Fargate (1 instance)                   | Sticky single-instance to maintain cursor |
+| `trigger-daemon` | Fargate (1 instance)                   | Same reasoning                            |
+| `notifier`       | Fargate with multiple workers          | Outbox-coordinated, can scale             |
+| Postgres         | RDS or Crunchbridge                    | Daily backups                             |
+| Frontend         | Vercel + Walrus Sites mirror           | Censorship-resistant frontend             |
 
 ---
 
@@ -590,15 +594,15 @@ DAEMON_WALLET_PRIVATE_KEY=...       (in AWS Secrets Manager)
 
 ## 13. Security Posture
 
-| Surface | Protection |
-|---|---|
-| Backend database | Encrypted at rest; access via IAM; read-replica for analytics |
-| Beneficiary emails | KMS-encrypted at rest; logs strip email PII |
-| Enoki sponsor key | In AWS Secrets Manager; rotated quarterly; alerts on usage spikes |
-| Daemon wallet | Hot wallet, limited balance, alerted on drain |
-| Public endpoints | Rate-limited per-IP and per-address |
-| HTTPS only | HSTS preload; no plaintext fallback |
-| CORS | Strict allowlist for frontend origins |
+| Surface            | Protection                                                        |
+| ------------------ | ----------------------------------------------------------------- |
+| Backend database   | Encrypted at rest; access via IAM; read-replica for analytics     |
+| Beneficiary emails | KMS-encrypted at rest; logs strip email PII                       |
+| Enoki sponsor key  | In AWS Secrets Manager; rotated quarterly; alerts on usage spikes |
+| Daemon wallet      | Hot wallet, limited balance, alerted on drain                     |
+| Public endpoints   | Rate-limited per-IP and per-address                               |
+| HTTPS only         | HSTS preload; no plaintext fallback                               |
+| CORS               | Strict allowlist for frontend origins                             |
 
 Full threat model in [Security.md](./Security.md).
 

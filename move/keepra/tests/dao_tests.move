@@ -160,3 +160,150 @@ fun test_non_member_vote_fails() {
     clock::destroy_for_testing(clk);
     sc.end();
 }
+
+// Owner revokes after the proposal passes but before execute → release is blocked.
+#[test]
+#[expected_failure(abort_code = dao_release::EVaultRevoked)]
+fun test_revoke_before_dao_execute_fails() {
+    let mut sc = ts::begin(OWNER);
+    let clk = setup(&mut sc);
+
+    sc.next_tx(OWNER);
+    let vault = ts::take_immutable<Vault>(&sc);
+    let mut log = ts::take_shared<HeartbeatLog>(&sc);
+    let dao = ts::take_shared<VotingDAO>(&sc);
+
+    dao_release::propose(&vault, &clk, sc.ctx());
+    sc.next_tx(M1);
+    let mut req = ts::take_shared<DAOReleaseRequest>(&sc);
+    simple_voting::propose(&dao, object::id(&req), sc.ctx());
+    sc.next_tx(M1);
+    let mut prop = ts::take_shared<VotingProposal>(&sc);
+
+    simple_voting::vote(&dao, &mut prop, true, sc.ctx()); // M1
+    sc.next_tx(M2);
+    simple_voting::vote(&dao, &mut prop, true, sc.ctx()); // M2 — passed
+
+    // Owner revokes before the DAO executes.
+    sc.next_tx(OWNER);
+    vault::revoke_vault(&mut log, &clk, sc.ctx());
+
+    adapter::execute_release(&mut req, &mut log, &dao, &mut prop, &clk); // aborts EVaultRevoked
+
+    ts::return_immutable(vault);
+    ts::return_shared(log);
+    ts::return_shared(dao);
+    ts::return_shared(req);
+    ts::return_shared(prop);
+    clock::destroy_for_testing(clk);
+    sc.end();
+}
+
+// Executing the same release request twice is blocked.
+#[test]
+#[expected_failure(abort_code = dao_release::EAlreadyReleased)]
+fun test_execute_same_request_twice_fails() {
+    let mut sc = ts::begin(OWNER);
+    let clk = setup(&mut sc);
+
+    sc.next_tx(OWNER);
+    let vault = ts::take_immutable<Vault>(&sc);
+    let mut log = ts::take_shared<HeartbeatLog>(&sc);
+    let dao = ts::take_shared<VotingDAO>(&sc);
+
+    dao_release::propose(&vault, &clk, sc.ctx());
+    sc.next_tx(M1);
+    let mut req = ts::take_shared<DAOReleaseRequest>(&sc);
+    simple_voting::propose(&dao, object::id(&req), sc.ctx());
+    sc.next_tx(M1);
+    let mut prop = ts::take_shared<VotingProposal>(&sc);
+
+    simple_voting::vote(&dao, &mut prop, true, sc.ctx()); // M1
+    sc.next_tx(M2);
+    simple_voting::vote(&dao, &mut prop, true, sc.ctx()); // M2 — passed
+
+    adapter::execute_release(&mut req, &mut log, &dao, &mut prop, &clk); // success
+    adapter::execute_release(&mut req, &mut log, &dao, &mut prop, &clk); // aborts EAlreadyReleased
+
+    ts::return_immutable(vault);
+    ts::return_shared(log);
+    ts::return_shared(dao);
+    ts::return_shared(req);
+    ts::return_shared(prop);
+    clock::destroy_for_testing(clk);
+    sc.end();
+}
+
+// A proposal from a different DAO than the one the vault configured cannot execute.
+#[test]
+#[expected_failure(abort_code = adapter::EWrongDAO)]
+fun test_wrong_dao_execute_fails() {
+    let mut sc = ts::begin(OWNER);
+    let mut clk = clock::create_for_testing(sc.ctx());
+    clk.set_for_testing(START_MS);
+
+    // DAO 1 — the one the vault is configured with.
+    simple_voting::create_dao(string::utf8(b"DAO1"), vector[M1, M2, M3], THRESHOLD, sc.ctx());
+    sc.next_tx(OWNER);
+    let dao1_tmp = ts::take_shared<VotingDAO>(&sc);
+    let dao1_id = object::id(&dao1_tmp);
+    ts::return_shared(dao1_tmp);
+
+    vault::create_and_seal(
+        b"blob", option::none(), SEAL_ID, 1, vector[], INACTIVITY,
+        vector[M1], 1, option::some(dao1_id), option::some(THRESHOLD),
+        b"email", option::none(), &clk, sc.ctx(),
+    );
+    sc.next_tx(OWNER);
+    let vault = ts::take_immutable<Vault>(&sc);
+    let mut log = ts::take_shared<HeartbeatLog>(&sc);
+
+    // DAO 2 — a different DAO.
+    simple_voting::create_dao(string::utf8(b"DAO2"), vector[M1, M2, M3], THRESHOLD, sc.ctx());
+    sc.next_tx(OWNER);
+    let a = ts::take_shared<VotingDAO>(&sc);
+    let b = ts::take_shared<VotingDAO>(&sc);
+    let (dao1, dao2) = if (object::id(&a) == dao1_id) { (a, b) } else { (b, a) };
+
+    dao_release::propose(&vault, &clk, sc.ctx());
+    sc.next_tx(M1);
+    let mut req = ts::take_shared<DAOReleaseRequest>(&sc);
+    simple_voting::propose(&dao1, object::id(&req), sc.ctx());
+    sc.next_tx(M1);
+    let mut prop = ts::take_shared<VotingProposal>(&sc);
+
+    // Execute with the WRONG dao (proposal belongs to DAO1) → EWrongDAO.
+    adapter::execute_release(&mut req, &mut log, &dao2, &mut prop, &clk);
+
+    ts::return_immutable(vault);
+    ts::return_shared(log);
+    ts::return_shared(dao1);
+    ts::return_shared(dao2);
+    ts::return_shared(req);
+    ts::return_shared(prop);
+    clock::destroy_for_testing(clk);
+    sc.end();
+}
+
+// Proposing a DAO release on a vault with no DAO configured is rejected.
+#[test]
+#[expected_failure(abort_code = dao_release::ENoDaoConfigured)]
+fun test_propose_no_dao_fails() {
+    let mut sc = ts::begin(OWNER);
+    let mut clk = clock::create_for_testing(sc.ctx());
+    clk.set_for_testing(START_MS);
+
+    vault::create_and_seal(
+        b"blob", option::none(), SEAL_ID, 1, vector[], INACTIVITY,
+        vector[M1], 1, option::none(), option::none(),
+        b"email", option::none(), &clk, sc.ctx(),
+    );
+    sc.next_tx(OWNER);
+    let vault = ts::take_immutable<Vault>(&sc);
+
+    dao_release::propose(&vault, &clk, sc.ctx()); // aborts ENoDaoConfigured
+
+    ts::return_immutable(vault);
+    clock::destroy_for_testing(clk);
+    sc.end();
+}

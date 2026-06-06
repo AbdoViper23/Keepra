@@ -8,24 +8,24 @@
 
 ## Phase Progress Tracker
 
-| Phase                              | Owner | Days | Status                                                                                                                                                        | Commit |
-| ---------------------------------- | ----- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| 0. Setup & CI                      | E4    | 1    | ✅ Done — added `internal/` for private docs (gitignored); `.claude/` gitignored                                                                              | —      |
-| 1. Move skeleton                   | E1    | 2    | ✅ Done — dropped `errors.move` (inlined per module); `public fun` instead of `public entry` (Move 2024 lint)                                                 | —      |
-| 2. Heartbeat                       | E1    | 1    | ✅ Done — `revoke_vault` takes `&Clock` (spec called non-existent `current_time_ms` helper)                                                                   | —      |
-| 3. Guardian                        | E1    | 2    | ✅ Done — `mint_and_transfer` combines mint+transfer (spec's pattern fails to compile since GuardianCap lacks `store`)                                        | —      |
-| 4. Seal integration (CLI)          | E2    | 3    | ✅ Done — identity binds to `vault.seal_id` (not object::id); roundtrip green on testnet; pkg `0x25a0…5d73`                                                   | —      |
-| **5. Walrus integration (CUTOFF)** | E2    | 2    | ✅ Done — ciphertext on Walrus E2E; shared `walrus-client` (3+ aggregator fallback + sha256); Vault gains `walrus_blob_object_id`; republished `0xfad8…652a7` | —      |
-| 6. zkLogin + Enoki setup           | E3    | 3    | ⬜ Not started                                                                                                                                                | —      |
-| 7. Vault creation UI               | E3    | 4    | ⬜ Not started                                                                                                                                                | —      |
-| 8. Beneficiary claim page          | E3    | 4    | ⬜ Not started                                                                                                                                                | —      |
-| 9. Heartbeat dashboard             | E3    | 2    | ⬜ Not started                                                                                                                                                | —      |
-| 10. Notification daemon            | E4    | 3    | ⬜ Not started                                                                                                                                                | —      |
-| 11. Enoki sponsorship              | E2    | 2    | ⬜ Not started                                                                                                                                                | —      |
-| 12. Immutability hardening         | E1    | 2    | ⬜ Not started                                                                                                                                                | —      |
-| 13. DAO release flow               | E1+E2 | 4    | ⬜ Not started                                                                                                                                                | —      |
-| 14. Demo polish + video            | all   | 3    | ⬜ Not started                                                                                                                                                | —      |
-| 15. Walrus Sites (stretch)         | E4    | 1    | ⬜ Not started                                                                                                                                                | —      |
+| Phase                              | Owner | Days | Status                                                                                                                                                            | Commit |
+| ---------------------------------- | ----- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 0. Setup & CI                      | E4    | 1    | ✅ Done — added `internal/` for private docs (gitignored); `.claude/` gitignored                                                                                  | —      |
+| 1. Move skeleton                   | E1    | 2    | ✅ Done — dropped `errors.move` (inlined per module); `public fun` instead of `public entry` (Move 2024 lint)                                                     | —      |
+| 2. Heartbeat                       | E1    | 1    | ✅ Done — `revoke_vault` takes `&Clock` (spec called non-existent `current_time_ms` helper)                                                                       | —      |
+| 3. Guardian                        | E1    | 2    | ✅ Done — `mint_and_transfer` combines mint+transfer (spec's pattern fails to compile since GuardianCap lacks `store`)                                            | —      |
+| 4. Seal integration (CLI)          | E2    | 3    | ✅ Done — identity binds to `vault.seal_id` (not object::id); roundtrip green on testnet; pkg `0x25a0…5d73`                                                       | —      |
+| **5. Walrus integration (CUTOFF)** | E2    | 2    | ✅ Done — ciphertext on Walrus E2E; shared `walrus-client` (3+ aggregator fallback + sha256); Vault gains `walrus_blob_object_id`; republished `0x2d35cf…01ba7a4` | —      |
+| 6. zkLogin + Enoki setup           | E3    | 3    | ⬜ Not started                                                                                                                                                    | —      |
+| 7. Vault creation UI               | E3    | 4    | ⬜ Not started                                                                                                                                                    | —      |
+| 8. Beneficiary claim page          | E3    | 4    | ⬜ Not started                                                                                                                                                    | —      |
+| 9. Heartbeat dashboard             | E3    | 2    | ⬜ Not started                                                                                                                                                    | —      |
+| 10. Notification daemon            | E4    | 3    | ⬜ Not started                                                                                                                                                    | —      |
+| 11. Enoki sponsorship              | E2    | 2    | ⬜ Not started                                                                                                                                                    | —      |
+| 12. Immutability hardening         | E1    | 2    | ⬜ Not started                                                                                                                                                    | —      |
+| 13. DAO release flow               | E1+E2 | 4    | ⬜ Not started                                                                                                                                                    | —      |
+| 14. Demo polish + video            | all   | 3    | ⬜ Not started                                                                                                                                                    | —      |
+| 15. Walrus Sites (stretch)         | E4    | 1    | ⬜ Not started                                                                                                                                                    | —      |
 
 Total: ~37 dev-days across 4 engineers = ~10 calendar days with parallelism. 6-week timeline absorbs slippage.
 
@@ -363,7 +363,7 @@ cd tools/seal-roundtrip && pnpm start
 ### Notes
 
 - Walrus testnet may be wiped periodically. Document the testnet endpoint version in `tools/seal-roundtrip/README.md`.
-- For now, upload with `epochs: 5` (~70 days at 14-day epochs). Enough for hackathon timeline.
+- For now, upload with `epochs: 5` (~70 days at 14-day epochs). Enough for the MVP timeline.
 - Use the HTTP API (`PUT /v1/blobs?epochs=5`) for upload — simpler than full SDK for the CLI.
 
 ### Commit
@@ -549,7 +549,7 @@ cd apps/web && pnpm test:e2e -- claim-vault
 
 ### Critical: this is THE demo flow
 
-This page is what the hackathon judges will see in the 3-minute demo video. Spend extra time on:
+This page is what reviewers will see in the 3-minute demo video. Spend extra time on:
 
 - Loading states (no blank screens)
 - Error states (clear language; never expose stack traces)
@@ -631,7 +631,7 @@ phase-9: implement dashboard with heartbeat and revoke
 1. Set up Postgres schema per [Backend.md §4](./Backend.md#4-the-indexer)
 2. Build `apps/indexer/` to mirror Sui events into Postgres
 3. Build `apps/trigger-daemon/` per [Backend.md §5](./Backend.md#5-the-trigger-daemon)
-4. Build `apps/notifier/` with AWS SES (sandbox mode OK for hackathon)
+4. Build `apps/notifier/` with AWS SES (sandbox mode OK for the MVP)
 5. Wire email templates for `trigger-alert-beneficiary` and `heartbeat-reminder-{7d,1d}`
 6. Add `mark_triggered` Move entry function + call it from the daemon
 
@@ -676,7 +676,7 @@ pnpm --filter @keepra/notifier dev &
 ### Notes
 
 - AWS SES sandbox only allows sending to verified email addresses — add `e1@keepra.dev`, etc. to the verified list for testing
-- For hackathon, single Postgres instance is fine; no replication
+- For the MVP, single Postgres instance is fine; no replication
 - `mark_triggered` is cosmetic only — `seal_approve_release` re-evaluates conditions live. Document this clearly in code comments.
 
 ### Commit
@@ -848,19 +848,19 @@ phase-13: implement DAO release flow with SimpleVoting adapter
 
 ## Phase 14 — Demo Polish + Video
 
-**Goal:** Submission-ready hackathon package. 3-minute demo video. Polished landing page. README has quickstart.
+**Goal:** A polished, demo-ready MVP. 3-minute demo video. Polished landing page. README has quickstart.
 
 ### Tasks
 
-1. Polish the landing page (`apps/web/app/(marketing)/page.tsx`) per the demo script in `internal/Hackathon.md §3` (team-only)
+1. Polish the landing page (`apps/web/app/(marketing)/page.tsx`) per the demo script in `internal/` notes (team-only)
 2. Pre-seed "Sarah's Letters" demo data:
    - Create a vault with `last_heartbeat_ms = now - 31 days` (manual time fudge)
    - Use a real email + Google account for "Maya"
    - Letter content: a heartfelt parental letter
-3. Record the 3-minute demo video per the beat-by-beat in `internal/Hackathon.md §3` (team-only)
+3. Record the 3-minute demo video per the beat-by-beat in `internal/` notes (team-only)
 4. Update repo README with: pitch, quickstart, demo video link, deployed URL
 5. Write `tools/demo-seed/` script that recreates Sarah's vault from scratch (in case testnet wipes)
-6. Submission checklist walk-through per `internal/Hackathon.md §5` (team-only)
+6. Release checklist walk-through per `internal/` notes (team-only)
 
 ### Files to create
 
@@ -878,8 +878,8 @@ DEMO.md                                     # instructions for demo
 - [ ] Landing page renders correctly on desktop + mobile
 - [ ] Demo video uploaded (YouTube unlisted + Walrus mirror for resilience)
 - [ ] `pnpm demo:seed` recreates Sarah's vault in < 60 seconds
-- [ ] README has: pitch, demo video, quickstart (`pnpm install && pnpm dev`), submission link
-- [ ] Submission form fields all filled (track, video URL, GitHub URL, deployed URL)
+- [ ] README has: pitch, demo video, quickstart (`pnpm install && pnpm dev`)
+- [ ] Demo video URL, GitHub URL, and deployed URL are ready
 
 ### Verify command
 
@@ -891,7 +891,7 @@ pnpm demo:seed
 ### Commit
 
 ```
-phase-14: demo polish, video, submission package
+phase-14: demo polish, video, release package
 ```
 
 ---
@@ -965,9 +965,9 @@ phase-15: deploy frontend to Walrus Sites
 
 ---
 
-## Post-Submission Plan
+## Post-MVP Plan
 
-After Phase 14 commits, regardless of placement, see [Roadmap.md v1](./Roadmap.md#v1--pre-product-months-13-post-hackathon) for what comes next:
+After Phase 14 commits, regardless of placement, see [Roadmap.md v1](./Roadmap.md#v1--pre-product-months-13-post-mvp) for what comes next:
 
 1. Mainnet deployment
 2. External Move audit
@@ -975,7 +975,7 @@ After Phase 14 commits, regardless of placement, see [Roadmap.md v1](./Roadmap.m
 4. First customer interviews
 5. Monetization (Personal $5/mo, Family $15/mo)
 
-But that's all out of MVP scope. Phases 0–15 above are the hackathon.
+But that's all out of MVP scope. Phases 0–15 above are the MVP.
 
 ---
 
@@ -983,4 +983,4 @@ But that's all out of MVP scope. Phases 0–15 above are the hackathon.
 
 - [CLAUDE.md](../CLAUDE.md) — read first every session
 - [Repo-Structure.md](./Repo-Structure.md) — where files go
-- `internal/Hackathon.md` (gitignored) — submission strategy, team-only
+- `internal/` (gitignored) — team-only planning notes

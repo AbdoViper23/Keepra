@@ -38,7 +38,7 @@ keepra/
 │   ├── TechStack.md
 │   └── BRAND.md                        # (created when product name is finalized)
 │
-│  Note: COMPETITION.md, METRICS.md, and Hackathon.md live in a top-level
+│  Note: team-private planning notes live in a top-level
 │  `internal/` folder (gitignored) — team-only docs.
 │
 │  Move modules are scaffolded via the installed Sui-Move skill (no static
@@ -282,10 +282,10 @@ keepra/
 
 ```yaml
 packages:
-  - "apps/*"
-  - "tools/*"
-  - "tooling/*"
-  - "tests/*"
+  - 'apps/*'
+  - 'tools/*'
+  - 'tooling/*'
+  - 'tests/*'
 ```
 
 ## `.gitignore`
@@ -770,9 +770,9 @@ jobs:
 name: Move Tests
 on:
   push:
-    paths: ["move/**"]
+    paths: ['move/**']
   pull_request:
-    paths: ["move/**"]
+    paths: ['move/**']
 
 jobs:
   move-test:
@@ -848,25 +848,25 @@ pnpm typecheck
 
 When you're not sure where to put a file, use this lookup:
 
-| You're writing... | Put it in... |
-|---|---|
-| A Move struct | `move/keepra/sources/<module>.move` |
-| A Move test | `move/keepra/tests/<module>_tests.move` |
-| A React page | `apps/web/app/<route>/page.tsx` |
-| A React component | `apps/web/components/<category>/<Component>.tsx` |
+| You're writing...                            | Put it in...                                                                                         |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| A Move struct                                | `move/keepra/sources/<module>.move`                                                                  |
+| A Move test                                  | `move/keepra/tests/<module>_tests.move`                                                              |
+| A React page                                 | `apps/web/app/<route>/page.tsx`                                                                      |
+| A React component                            | `apps/web/components/<category>/<Component>.tsx`                                                     |
 | A reusable client helper (Seal, Walrus, Sui) | `apps/web/lib/<helper>.ts` for frontend-specific; `apps/shared/src/<helper>-client.ts` for cross-app |
-| A Zustand store | `apps/web/stores/use<Name>Store.ts` |
-| A TanStack Query hook | `apps/web/hooks/use<Name>.ts` |
-| A Web Worker | `apps/web/workers/<name>.worker.ts` |
-| A Playwright e2e test | `apps/web/e2e/<flow>.spec.ts` |
-| An API route | `apps/api/src/routes/<route>.ts` |
-| An indexer subscriber | `apps/indexer/src/subscribers/<event>.ts` |
-| An email template | `apps/notifier/src/templates/<template>.html` |
-| A DB schema change | `apps/shared/src/db/schema.ts` + migration file |
-| A shared TS type | `apps/shared/src/types.ts` |
-| A dev script (one-off) | `tools/<tool-name>/` |
-| A new env var | `*.env.example` + `apps/shared/src/env.ts` (zod schema) |
-| A new doc | `docs/<Topic>.md` |
+| A Zustand store                              | `apps/web/stores/use<Name>Store.ts`                                                                  |
+| A TanStack Query hook                        | `apps/web/hooks/use<Name>.ts`                                                                        |
+| A Web Worker                                 | `apps/web/workers/<name>.worker.ts`                                                                  |
+| A Playwright e2e test                        | `apps/web/e2e/<flow>.spec.ts`                                                                        |
+| An API route                                 | `apps/api/src/routes/<route>.ts`                                                                     |
+| An indexer subscriber                        | `apps/indexer/src/subscribers/<event>.ts`                                                            |
+| An email template                            | `apps/notifier/src/templates/<template>.html`                                                        |
+| A DB schema change                           | `apps/shared/src/db/schema.ts` + migration file                                                      |
+| A shared TS type                             | `apps/shared/src/types.ts`                                                                           |
+| A dev script (one-off)                       | `tools/<tool-name>/`                                                                                 |
+| A new env var                                | `*.env.example` + `apps/shared/src/env.ts` (zod schema)                                              |
+| A new doc                                    | `docs/<Topic>.md`                                                                                    |
 
 If your file doesn't fit any of these, stop and ask.
 

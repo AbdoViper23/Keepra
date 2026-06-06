@@ -694,7 +694,7 @@ Keepra uses Sui's idiomatic **capability pattern**: rights are encoded as owned 
 
 ### Testnet: upgradable
 
-For the hackathon build, the Move package upgrade authority is held by a single dev key. This allows rapid iteration (fix bugs, add conditions, refine `seal_approve_release`).
+For the MVP, the Move package upgrade authority is held by a single dev key. This allows rapid iteration (fix bugs, add conditions, refine `seal_approve_release`).
 
 **Risk:** A malicious package upgrade could loosen `seal_approve_release` and let attackers decrypt arbitrary vaults. Mitigated by:
 
