@@ -13,7 +13,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { useCreateVault, useCurrentAccount } from '@/lib/keepra/hooks';
-import { mockConnect } from '@/lib/keepra/mock-store';
+import { ConnectModalButton } from '@/components/keepra/ConnectButton';
 import { looksLikeSeedPhrase } from '@/lib/keepra/seedphrase-detector';
 import { bytesToSize, isValidSuiAddress, truncateId } from '@/lib/keepra/format';
 import { cn } from '@/lib/utils';
@@ -445,12 +445,11 @@ export function CreateWizard() {
             {!account && (
               <div className="p-4 border border-destructive/40 bg-destructive/5 flex items-center justify-between">
                 <span className="text-sm">You need a connected wallet to seal this vault.</span>
-                <button
-                  onClick={mockConnect}
-                  className="px-4 py-2 bg-foreground text-background text-sm font-medium rounded-sm"
-                >
-                  Connect
-                </button>
+                <ConnectModalButton>
+                  <button className="px-4 py-2 bg-foreground text-background text-sm font-medium rounded-sm">
+                    Connect
+                  </button>
+                </ConnectModalButton>
               </div>
             )}
 

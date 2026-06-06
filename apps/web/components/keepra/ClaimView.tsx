@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Check, Download, FileText, Image as ImageIcon } from 'lucide-react';
 import { useClaim, useCurrentAccount, useVault } from '@/lib/keepra/hooks';
-import { mockConnect } from '@/lib/keepra/mock-store';
+import { ConnectModalButton } from '@/components/keepra/ConnectButton';
 import { VaultStateBadge } from '@/components/keepra/VaultStateBadge';
 import { CountdownTimer } from '@/components/keepra/CountdownTimer';
 import { bytesToSize, truncateId } from '@/lib/keepra/format';
@@ -101,12 +101,11 @@ export function ClaimView({ vaultId }: { vaultId: string }) {
           <p className="text-muted-foreground">
             Connect a wallet to open the vault. Decryption happens entirely in your browser.
           </p>
-          <button
-            onClick={mockConnect}
-            className="px-6 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-sm hover:brightness-110"
-          >
-            Connect wallet
-          </button>
+          <ConnectModalButton>
+            <button className="px-6 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-sm hover:brightness-110">
+              Connect wallet
+            </button>
+          </ConnectModalButton>
         </div>
       )}
 

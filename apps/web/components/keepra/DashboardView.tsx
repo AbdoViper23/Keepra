@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { useCurrentAccount, useHeartbeat, useVault, useVaults } from '@/lib/keepra/hooks';
-import { mockConnect } from '@/lib/keepra/mock-store';
+import { ConnectModalButton } from '@/components/keepra/ConnectButton';
 import { VaultStateBadge } from '@/components/keepra/VaultStateBadge';
 import { CountdownTimer } from '@/components/keepra/CountdownTimer';
 import { formatBlobId, formatDate, truncateId } from '@/lib/keepra/format';
@@ -37,12 +37,11 @@ export function DashboardView() {
           title="Connect a wallet to begin"
           body="Your vaults live on Sui. Connect a wallet to see what you've sealed."
           cta={
-            <button
-              onClick={mockConnect}
-              className="px-6 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-sm"
-            >
-              Connect wallet
-            </button>
+            <ConnectModalButton>
+              <button className="px-6 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-sm">
+                Connect wallet
+              </button>
+            </ConnectModalButton>
           }
         />
       )}
